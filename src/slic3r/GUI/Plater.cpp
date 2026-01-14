@@ -2476,7 +2476,6 @@ void Sidebar::update_filament_index_labels()
         combos_filament[index]->clr_picker->SetLabel(
             wxString::Format("%d", filament_display_index_from_zero_based(static_cast<int>(index))));
     }
-    Layout();
 }
 
 void Sidebar::update_presets(Preset::Type preset_type)

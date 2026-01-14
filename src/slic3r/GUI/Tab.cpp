@@ -1519,7 +1519,9 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         update_wiping_button_visibility();
 
     if (opt_key == "start_filament_index_at_zero") {
-        wxGetApp().plater()->sidebar().update_filament_index_labels();
+        wxGetApp().CallAfter([]() {
+            wxGetApp().plater()->sidebar().update_filament_index_labels();
+        });
     }
 
 
