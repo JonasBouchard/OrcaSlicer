@@ -1518,6 +1518,10 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
     if (opt_key == "single_extruder_multi_material" || opt_key == "extruders_count" )
         update_wiping_button_visibility();
 
+    if (opt_key == "start_filament_index_at_zero") {
+        wxGetApp().plater()->sidebar().update_filament_index_labels();
+    }
+
 
     if (opt_key == "pellet_flow_coefficient")
     {
@@ -4916,6 +4920,7 @@ if (is_marlin_flavor)
         optgroup->append_single_option_line("machine_load_filament_time", "printer_multimaterial_advanced#filament-load-time");
         optgroup->append_single_option_line("machine_unload_filament_time", "printer_multimaterial_advanced#filament-unload-time");
         optgroup->append_single_option_line("machine_tool_change_time", "printer_multimaterial_advanced#tool-change-time");
+        optgroup->append_single_option_line("start_filament_index_at_zero", "printer_multimaterial_advanced#filament-index-start");
         m_pages.insert(m_pages.end() - n_after_single_extruder_MM, page);
     }
 

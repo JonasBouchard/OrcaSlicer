@@ -882,6 +882,12 @@ static bool has_junction_deviation(const DynamicPrintConfig* printer_config)
 static DynamicFilamentList dynamic_filament_list;
 static DynamicFilamentList1Based dynamic_filament_list_1_based;
 
+static int filament_display_index_from_zero_based(int filament_idx)
+{
+    const bool start_zero = wxGetApp().preset_bundle->printers.get_edited_preset().config.opt_bool("start_filament_index_at_zero");
+    return filament_idx + (start_zero ? 0 : 1);
+}
+
 class AMSCountPopupWindow : public PopupWindow
 {
 public:
@@ -2277,7 +2283,7 @@ void Sidebar::init_filament_combo(PlaterPresetComboBox **combo, const int filame
     if ((filament_idx % 2) == 0) // Dont add right column item. this one create equal spacing on left, right & middle
         combo_and_btn_sizer->AddSpacer(FromDIP((filament_idx % 2) == 0 ? 12 : 3)); // Content Margin
 
-    (*combo)->clr_picker->SetLabel(wxString::Format("%d", filament_idx + 1));
+    (*combo)->clr_picker->SetLabel(wxString::Format("%d", filament_display_index_from_zero_based(filament_idx)));
     combo_and_btn_sizer->Add((*combo)->clr_picker, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()) - FromDIP(2)); // ElementSpacing - 2 (from combo box))
     combo_and_btn_sizer->Add(*combo, 1, wxALL | wxEXPAND, FromDIP(2))->SetMinSize({-1, FromDIP(30)});
 
@@ -2456,9 +2462,21 @@ void Sidebar::update_all_preset_comboboxes()
         update_printer_thumbnail();
     }
 
+    update_filament_index_labels();
+
     // Orca:: show device tab based on vendor type
     p_mainframe->show_device(preset_bundle.use_bbl_device_tab());
     p_mainframe->m_tabpanel->SetSelection(p_mainframe->m_tabpanel->GetSelection());
+}
+
+void Sidebar::update_filament_index_labels()
+{
+    auto &combos_filament = p->combos_filament;
+    for (size_t index = 0; index < combos_filament.size(); ++index) {
+        combos_filament[index]->clr_picker->SetLabel(
+            wxString::Format("%d", filament_display_index_from_zero_based(static_cast<int>(index))));
+    }
+    Layout();
 }
 
 void Sidebar::update_presets(Preset::Type preset_type)
