@@ -36,9 +36,9 @@ MultiTaskItem::MultiTaskItem(wxWindow* parent, MachineObject* obj, int type)
 
 
     auto m_btn_bg_enable = StateColor(
-        std::pair<wxColour, int>(wxColour(230, 74, 25), StateColor::Pressed),
-        std::pair<wxColour, int>(wxColour(255, 112, 67), StateColor::Hovered),
-        std::pair<wxColour, int>(wxColour(255, 87, 34), StateColor::Normal)
+        std::pair<wxColour, int>(wxColour(0, 137, 123), StateColor::Pressed),
+        std::pair<wxColour, int>(wxColour(38, 166, 154), StateColor::Hovered),
+        std::pair<wxColour, int>(wxColour(0, 150, 136), StateColor::Normal)
     );
 
     m_button_resume = new Button(this, _L("Resume"));
