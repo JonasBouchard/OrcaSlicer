@@ -2388,6 +2388,12 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat { 0. });
 
+    def = this->add("start_filament_index_at_zero", coBool);
+    def->label = L("Start filament index at 0");
+    def->tooltip = L("Start filament/tool indexing from 0 instead of 1. Currently informational only.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
 
     def = this->add("support_object_skip_flush", coBool);
     def->set_default_value(new ConfigOptionBool(false));
