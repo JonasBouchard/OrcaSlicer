@@ -41,6 +41,21 @@ static int filaments_count()
     return wxGetApp().filaments_cnt();
 }
 
+static bool start_filament_index_at_zero()
+{
+    return wxGetApp().preset_bundle->printers.get_edited_preset().config.opt_bool("start_filament_index_at_zero");
+}
+
+static int filament_display_index_from_one_based(int index)
+{
+    return start_filament_index_at_zero() ? index - 1 : index;
+}
+
+static int filament_display_index_from_zero_based(int index)
+{
+    return start_filament_index_at_zero() ? index : index + 1;
+}
+
 static bool is_improper_category(const std::string& category, const int filaments_cnt, const bool is_object_settings = true)
 {
     return  category.empty() ||
@@ -925,7 +940,7 @@ void MenuFactory::append_menu_item_change_extruder(wxMenu* menu)
         if (i > 0) {
             auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i - 1]);
             if (preset == nullptr) {
-                item_name = wxString::Format(_L("Filament %d"), i);
+                item_name = wxString::Format(_L("Filament %d"), filament_display_index_from_one_based(i));
             } else {
                 item_name = from_u8(preset->label(false));
             }
@@ -1527,7 +1542,8 @@ void MenuFactory::create_filament_action_menu(bool init, int active_filament_men
             continue;
 
         auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i]);
-        wxString item_name = preset ? from_u8(preset->label(false)) : wxString::Format(_L("Filament %d"), i + 1);
+        wxString item_name = preset ? from_u8(preset->label(false))
+                                    : wxString::Format(_L("Filament %d"), filament_display_index_from_zero_based(i));
 
         append_menu_item(sub_menu, wxID_ANY, item_name, "",
             [i](wxCommandEvent&) { plater()->sidebar().change_filament(-2, i); }, *icons[i], menu,
@@ -2085,7 +2101,7 @@ void MenuFactory::append_menu_item_change_filament(wxMenu* menu)
         if (i > 0) {
             auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i - 1]);
             if (preset == nullptr) {
-                item_name = wxString::Format(_L("Filament %d"), i);
+                item_name = wxString::Format(_L("Filament %d"), filament_display_index_from_one_based(i));
             } else {
                 item_name = from_u8(preset->label(false));
             }
