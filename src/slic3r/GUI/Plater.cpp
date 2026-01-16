@@ -834,7 +834,7 @@ struct DynamicFilamentList1Based : DynamicFilamentList
     wxString get_value(int index) override
     {
         wxString str;
-        str << index+1;
+        str << filament_index_from_zero_based(index);
         return str;
     }
     int index_of(wxString value) override
@@ -842,8 +842,9 @@ struct DynamicFilamentList1Based : DynamicFilamentList
         long n = 0;
         if(!value.ToLong(&n))
             return -1;
-        --n;
-        return (n >= 0 && n <= items.size()) ? int(n) : -1;
+        if (!start_filament_index_at_0())
+            --n;
+        return (n >= 0 && n <= static_cast<long>(items.size())) ? int(n) : -1;
     }
     void update(bool force = false)
     {
