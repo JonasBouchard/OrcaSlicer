@@ -9492,14 +9492,15 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
             if (error_iter != m_gcode_viewer.m_gcode_check_result.print_area_error_infos.begin()) {
                 text += "\n";
             }
-            int extruder_id = error_iter->first + 1; // change extruder id to 1 based
+            const int extruder_index = error_iter->first;
+            const int extruder_id = filament_index_from_zero_based(extruder_index);
             std::string filaments;
             std::vector<int> slice_error_object_idxs;
             for (size_t i = 0; i < error_iter->second.size(); ++i) {
                 if (i > 0) {
                     filaments += ", ";
                 }
-                int filament_id = error_iter->second[i].first + 1; // change filament id to 1 based
+                const int filament_id = filament_index_from_zero_based(error_iter->second[i].first);
                 int object_label_id = error_iter->second[i].second;
 
                 filaments += std::to_string(filament_id);
@@ -9522,7 +9523,7 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
                     }
                 }
             }
-            std::string extruder_name = extruder_name_list[extruder_id-1];
+            std::string extruder_name = extruder_name_list[extruder_index];
             if (error_iter->second.size() == 1) {
                 text += (boost::format(_u8L("Filament %s is placed in the %s, but the generated G-code path exceeds the printable range of the %s.")) %filaments %extruder_name %extruder_name).str();
             }
@@ -9538,11 +9539,12 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
             if (error_iter != m_gcode_viewer.m_gcode_check_result.print_height_error_infos.begin()) {
                 text += "\n";
             }
-            int              extruder_id = error_iter->first + 1; // change extruder id to 1 based
+            const int        extruder_index = error_iter->first;
+            const int        extruder_id = filament_index_from_zero_based(extruder_index);
             std::set<int>    filament_ids;
             std::vector<int> slice_error_object_idxs;
             for (size_t i = 0; i < error_iter->second.size(); ++i) {
-                int filament_id     = error_iter->second[i].first + 1; // change filament id to 1 based
+                int filament_id     = filament_index_from_zero_based(error_iter->second[i].first);
                 int object_label_id = error_iter->second[i].second;
                 filament_ids.insert(filament_id);
                 for (int object_idx = 0; object_idx < (int) m_model->objects.size(); ++object_idx) {
@@ -9575,7 +9577,7 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
                     }
                 }
             }
-            std::string extruder_name = extruder_name_list[extruder_id-1];
+            std::string extruder_name = extruder_name_list[extruder_index];
             if (error_iter->second.size() == 1) {
                 text += (boost::format(_u8L("Filament %s is placed in the %s, but the generated G-code path exceeds the printable height of the %s.")) % filaments % extruder_name % extruder_name).str();
             } else {
@@ -9604,7 +9606,7 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
         const std::vector<int> &conflict_filament = m_gcode_viewer.filament_printable_reuslt.conflict_filament;
         auto                    iter              = conflict_filament.begin();
         for (int filament : conflict_filament) {
-            warning += std::to_string(filament + 1);
+            warning += std::to_string(filament_index_from_zero_based(filament));
             warning += " ";
         }
         text  = (boost::format(_u8L("filaments %s cannot be printed directly on the surface of this plate.")) % warning).str();
