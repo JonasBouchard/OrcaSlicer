@@ -1537,6 +1537,12 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
     }
 
+    if (opt_key == "start_filament_index_at_1") {
+        wxGetApp().sidebar().update_dynamic_filament_list();
+        wxGetApp().sidebar().update_all_preset_comboboxes();
+        wxGetApp().plater()->update();
+    }
+
     if(opt_key == "purge_in_prime_tower")
         wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
 
