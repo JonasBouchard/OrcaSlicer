@@ -4927,7 +4927,9 @@ if (is_marlin_flavor)
 
     // Orca: build missed extruder pages
     for (auto extruder_idx = m_extruders_count_old; extruder_idx < m_extruders_count; ++extruder_idx) {
-        const wxString& page_name = (m_extruders_count > 1) ? wxString::Format("Extruder %d", int(extruder_idx + 1)) : wxString::Format("Extruder");
+        const wxString& page_name = (m_extruders_count > 1)
+            ? wxString::Format("Extruder %d", filament_index_from_zero_based(static_cast<int>(extruder_idx)))
+            : wxString::Format("Extruder");
 
         //# build page
         //const wxString& page_name = wxString::Format("Extruder %d", int(extruder_idx + 1));
@@ -5057,7 +5059,7 @@ if (is_marlin_flavor)
         if (m_extruders_count == 1)
             first_extruder_title = wxString::Format("Extruder");
     } else if (m_extruders_count_old == 1) {
-        first_extruder_title = wxString::Format("Extruder %d", 1);
+        first_extruder_title = wxString::Format("Extruder %d", filament_index_from_zero_based(0));
     }
     auto & searcher = wxGetApp().sidebar().get_searcher();
     for (auto &group : m_pages[n_before_extruders]->m_optgroups) {
