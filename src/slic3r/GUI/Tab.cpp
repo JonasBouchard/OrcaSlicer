@@ -1537,7 +1537,7 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
     }
 
-    if (opt_key == "start_filament_index_at_1") {
+    if (opt_key == "start_filament_index_at_0") {
         wxGetApp().sidebar().update_dynamic_filament_list();
         wxGetApp().sidebar().update_all_preset_comboboxes();
         wxGetApp().plater()->update();
@@ -4917,12 +4917,11 @@ if (is_marlin_flavor)
         optgroup->append_single_option_line("parking_pos_retraction", "printer_multimaterial_semm_parameters#filament-parking-position");
         optgroup->append_single_option_line("extra_loading_move", "printer_multimaterial_semm_parameters#extra-loading-distance");
         optgroup->append_single_option_line("high_current_on_filament_swap", "printer_multimaterial_semm_parameters#high-extruder-current-on-filament-swap");
-        optgroup->append_single_option_line("start_filament_index_at_1", "printer_multimaterial_semm_parameters#start_filament_index_at_1");
-
         optgroup = page->new_optgroup(L("Advanced"), L"param_advanced");
         optgroup->append_single_option_line("machine_load_filament_time", "printer_multimaterial_advanced#filament-load-time");
         optgroup->append_single_option_line("machine_unload_filament_time", "printer_multimaterial_advanced#filament-unload-time");
         optgroup->append_single_option_line("machine_tool_change_time", "printer_multimaterial_advanced#tool-change-time");
+        optgroup->append_single_option_line("start_filament_index_at_0", "printer_multimaterial_advanced#start-filament-index-at-0");
         m_pages.insert(m_pages.end() - n_after_single_extruder_MM, page);
     }
 

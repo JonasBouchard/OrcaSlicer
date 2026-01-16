@@ -32,7 +32,7 @@ void break_to_debugger();
 extern const std::string& shortkey_ctrl_prefix();
 extern const std::string& shortkey_alt_prefix();
 
-bool start_filament_index_at_1();
+bool start_filament_index_at_0();
 int filament_index_from_zero_based(int index);
 int filament_index_from_one_based(int index);
 
