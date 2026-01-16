@@ -790,7 +790,7 @@ void apply_extruder_selector(Slic3r::GUI::BitmapComboBox** ctrl,
             ++i;
         }
 
-        const int display_index = filament_index_from_one_based(i);
+        const int display_index = Slic3r::GUI::filament_index_from_one_based(i);
         (*ctrl)->Append(use_full_item_name
                         ? Slic3r::GUI::from_u8((boost::format("%1% %2%") % str % display_index).str())
                         : wxString::Format("%d", display_index), *bmp);
@@ -1361,6 +1361,5 @@ void ImageTransientPopup::OnMouse(wxMouseEvent &event)
 {
     event.Skip();
 }
-
 
 
