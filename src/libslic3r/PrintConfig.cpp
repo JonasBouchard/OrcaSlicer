@@ -4428,12 +4428,12 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(-2.));
 
-    def          = this->add("start_filament_index_at_1", coBool);
-    def->label   = L("Start filament index at 1");
-    def->tooltip = L("When enabled, filament/extruder indices are treated as 1-based (1..N) instead of 0-based (0..N-1). "
-                     "Enable this if your firmware / macros expect filament indices starting at 1.");
+    def          = this->add("start_filament_index_at_0", coBool);
+    def->label   = L("Start filament index at 0");
+    def->tooltip = L("When enabled, filament/extruder indices are treated as 0-based (0..N-1) instead of 1-based (1..N). "
+                     "Disable this if your firmware / macros expect filament indices starting at 1.");
     def->mode    = comAdvanced;
-    def->set_default_value(new ConfigOptionBool(false));
+    def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("start_end_points", coPoints);
     def->label = L("Start end points");
