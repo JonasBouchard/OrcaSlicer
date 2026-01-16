@@ -3274,7 +3274,7 @@ std::tuple<ImVec2, bool>  ImGuiWrapper::calculate_filament_group_text_size(const
 void ImGuiWrapper::filament_group(const std::string& filament_type, const char* hex_color, unsigned char filament_id, float align_width)
 {
     //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    std::string id = std::to_string(static_cast<unsigned int> (filament_id + 1));
+    std::string id = std::to_string(filament_index_from_zero_based(static_cast<int>(filament_id)));
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     static ImTextureID transparent;
     ImVec2             text_size = ImGui::CalcTextSize(filament_type.c_str());
