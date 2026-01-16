@@ -548,7 +548,7 @@ std::vector<wxBitmap*> get_extruder_color_icons(bool thin_icon/* = false*/)
 
         int index = 0;
         for (const auto &colors : readable_color_info) {
-            const int display_index = filament_index_from_zero_based(index);
+            const int display_index = GUI::filament_index_from_zero_based(index);
             auto      label         = std::to_string(display_index);
             bool is_gradient = ctype[index] == "0";
             if (colors.size() == 1) {
@@ -567,7 +567,7 @@ std::vector<wxBitmap*> get_extruder_color_icons(bool thin_icon/* = false*/)
         const int    icon_height = lround(2 * em);
         int index = 0;
         for (const auto &color : colors) {
-            const int display_index = filament_index_from_zero_based(index);
+            const int display_index = GUI::filament_index_from_zero_based(index);
             auto      label         = std::to_string(display_index);
             bmps.push_back(get_extruder_color_icon(color, label, icon_width, icon_height));
             ++index;
@@ -1365,4 +1365,3 @@ void ImageTransientPopup::OnMouse(wxMouseEvent &event)
 {
     event.Skip();
 }
-
