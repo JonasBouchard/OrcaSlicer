@@ -465,7 +465,7 @@ wxBitmap create_scaled_bitmap(  const std::string& bmp_name_in,
     if (bmp == nullptr) {
         // Neither SVG nor PNG has been found, raise error
         BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << "Could not load bitmap: " << bmp_name;
-        throw Slic3r::RuntimeError("Could not load bitmap: " + bmp_name);
+        return wxNullBitmap;
     }
 
     return *bmp;
@@ -485,7 +485,7 @@ wxBitmap create_scaled_bitmap2(const std::string& bmp_name_in, Slic3r::GUI::Bitm
     if (bmp == nullptr) {
         // No SVG found
         BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << "Could not load bitmap: " << bmp_name;
-        throw Slic3r::RuntimeError("Could not load bitmap: " + bmp_name);
+        return wxNullBitmap;
     }
     return *bmp;
 }
@@ -1360,7 +1360,6 @@ void ImageTransientPopup::OnMouse(wxMouseEvent &event)
 {
     event.Skip();
 }
-
 
 
 
