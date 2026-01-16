@@ -102,6 +102,27 @@ const std::string& shortkey_alt_prefix()
 	return str;
 }
 
+bool start_filament_index_at_1()
+{
+    const auto* preset_bundle = wxGetApp().preset_bundle;
+    if (!preset_bundle)
+        return false;
+
+    const auto& config = preset_bundle->printers.get_edited_preset().config;
+    const auto* opt = config.option<ConfigOptionBool>("start_filament_index_at_1");
+    return opt != nullptr && opt->value;
+}
+
+int filament_index_from_zero_based(int index)
+{
+    return index + (start_filament_index_at_1() ? 1 : 0);
+}
+
+int filament_index_from_one_based(int index)
+{
+    return start_filament_index_at_1() ? index : index - 1;
+}
+
 // opt_index = 0, by the reason of zero-index in ConfigOptionVector by default (in case only one element)
 void change_opt_value(DynamicPrintConfig& config, const t_config_option_key& opt_key, const boost::any& value, int opt_index /*= 0*/)
 {

@@ -873,7 +873,7 @@ wxString GLGizmoMmuSegmentation::handle_snapshot_action_name(bool shift_down, GL
     if (shift_down)
         action_name = _L("Remove painted color");
     else {
-        action_name        = GUI::format(_L("Painted using: Filament %1%"), m_selected_extruder_idx);
+        action_name        = GUI::format(_L("Painted using: Filament %1%"), filament_index_from_zero_based(m_selected_extruder_idx));
     }
     return action_name;
 }
