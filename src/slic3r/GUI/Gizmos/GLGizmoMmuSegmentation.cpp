@@ -192,7 +192,7 @@ void GLGizmoMmuSegmentation::data_changed(bool is_serializing)
 // BBS
 bool GLGizmoMmuSegmentation::on_number_key_down(int number)
 {
-    int extruder_idx = number - 1;
+    int extruder_idx = start_filament_index_at_0() ? number : number - 1;
     if (extruder_idx < m_extruders_colors.size() && extruder_idx >= 0)
         m_selected_extruder_idx = extruder_idx;
 
@@ -403,7 +403,7 @@ void GLGizmoMmuSegmentation::on_render_input_window(float x, float y, float bott
         const ColorRGBA &extruder_color = m_extruders_colors[extruder_idx];
         ImVec4           color_vec      = ImGuiWrapper::to_ImVec4(extruder_color);
         std::string color_label = std::string("##extruder color ") + std::to_string(extruder_idx);
-        std::string item_text = std::to_string(extruder_idx + 1);
+        std::string item_text = std::to_string(filament_index_from_zero_based(extruder_idx));
         const ImVec2 label_size = ImGui::CalcTextSize(item_text.c_str(), NULL, true);
 
         const ImVec2 button_size(max_label_size.x + m_imgui->scaled(0.5f),0.f);
@@ -435,7 +435,8 @@ void GLGizmoMmuSegmentation::on_render_input_window(float x, float y, float bott
         color_button_high = ImGui::GetCursorPos().y - color_button - 2.0;
         if (color_picked) { m_selected_extruder_idx = extruder_idx; }
 
-        if (extruder_idx < 16 && ImGui::IsItemHovered()) m_imgui->tooltip(_L("Shortcut Key ") + std::to_string(extruder_idx + 1), max_tooltip_width);
+        if (extruder_idx < 16 && ImGui::IsItemHovered())
+            m_imgui->tooltip(_L("Shortcut Key ") + std::to_string(filament_index_from_zero_based(extruder_idx)), max_tooltip_width);
 
         // draw filament id
         float gray = 0.299 * extruder_color.r() + 0.587 * extruder_color.g() + 0.114 * extruder_color.b();
@@ -1047,7 +1048,7 @@ void GLGizmoMmuSegmentation::render_filament_remap_ui(float window_width, float 
         #endif
 
         // overlay destination number with proper contrast calculation
-        std::string dst_txt = std::to_string(m_extruder_remap[src] + 1);
+        std::string dst_txt = std::to_string(filament_index_from_zero_based(static_cast<int>(m_extruder_remap[src])));
         float gray = 0.299f * dst_col.r() + 0.587f * dst_col.g() + 0.114f * dst_col.b();
         ImVec2 txt_sz = ImGui::CalcTextSize(dst_txt.c_str());
         ImVec2 pos = ImGui::GetItemRectMin();
