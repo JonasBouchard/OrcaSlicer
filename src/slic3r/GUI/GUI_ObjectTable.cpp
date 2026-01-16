@@ -2846,7 +2846,8 @@ int ObjectTablePanel::init_filaments_and_colors()
         }
 
         //parse the filaments
-        m_filaments_name[i] = wxString(std::to_string(i+1) + ": " + filament_presets[i]);
+        const int display_index = filament_index_from_zero_based(static_cast<int>(i));
+        m_filaments_name[i] = wxString(std::to_string(display_index) + ": " + filament_presets[i]);
 
         i++;
     }
