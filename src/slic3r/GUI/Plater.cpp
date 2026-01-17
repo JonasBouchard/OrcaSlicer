@@ -842,7 +842,7 @@ struct DynamicFilamentList1Based : DynamicFilamentList
         long n = 0;
         if(!value.ToLong(&n))
             return -1;
-        if (!start_filament_index_at_0())
+        if (!zero_based_filament_indexing())
             --n;
         return (n >= 0 && n <= static_cast<long>(items.size())) ? int(n) : -1;
     }

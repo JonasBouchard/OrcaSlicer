@@ -1537,7 +1537,7 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
     }
 
-    if (opt_key == "start_filament_index_at_0") {
+    if (opt_key == "zero_based_filament_indexing") {
         wxGetApp().sidebar().update_dynamic_filament_list();
         wxGetApp().sidebar().update_all_preset_comboboxes();
         wxGetApp().obj_list()->update_objects_list_filament_column(wxGetApp().filaments_cnt());
@@ -4926,7 +4926,7 @@ if (is_marlin_flavor)
         optgroup->append_single_option_line("machine_load_filament_time", "printer_multimaterial_advanced#filament-load-time");
         optgroup->append_single_option_line("machine_unload_filament_time", "printer_multimaterial_advanced#filament-unload-time");
         optgroup->append_single_option_line("machine_tool_change_time", "printer_multimaterial_advanced#tool-change-time");
-        optgroup->append_single_option_line("start_filament_index_at_0", "printer_multimaterial_advanced#start-filament-index-at-0");
+        optgroup->append_single_option_line("zero_based_filament_indexing", "printer_multimaterial_advanced#zero-based-filament-indexing");
         m_pages.insert(m_pages.end() - n_after_single_extruder_MM, page);
     }
 
