@@ -549,7 +549,7 @@ std::vector<wxBitmap*> get_extruder_color_icons(bool thin_icon/* = false*/)
         int index = 0;
         for (const auto &colors : readable_color_info) {
             const int display_index = Slic3r::GUI::filament_index_from_zero_based(index);
-            auto      label         = std::to_string(display_index);
+            auto label = std::to_string(display_index);
             bool is_gradient = ctype[index] == "0";
             if (colors.size() == 1) {
                 bmps.push_back(get_extruder_color_icon(colors[0], label, icon_width, icon_height));
@@ -568,7 +568,7 @@ std::vector<wxBitmap*> get_extruder_color_icons(bool thin_icon/* = false*/)
         int index = 0;
         for (const auto &color : colors) {
             const int display_index = Slic3r::GUI::filament_index_from_zero_based(index);
-            auto      label         = std::to_string(display_index);
+            auto label = std::to_string(display_index);
             bmps.push_back(get_extruder_color_icon(color, label, icon_width, icon_height));
             ++index;
         }
@@ -795,9 +795,7 @@ void apply_extruder_selector(Slic3r::GUI::BitmapComboBox** ctrl,
         }
 
         const int display_index = Slic3r::GUI::filament_index_from_one_based(i);
-        (*ctrl)->Append(use_full_item_name
-                        ? Slic3r::GUI::from_u8((boost::format("%1% %2%") % str % display_index).str())
-                        : wxString::Format("%d", display_index), *bmp);
+        (*ctrl)->Append(use_full_item_name ? Slic3r::GUI::from_u8((boost::format("%1% %2%") % str % display_index).str()) : wxString::Format("%d", display_index), *bmp);
         ++i;
     }
     (*ctrl)->SetSelection(0);
@@ -1365,3 +1363,7 @@ void ImageTransientPopup::OnMouse(wxMouseEvent &event)
 {
     event.Skip();
 }
+
+
+
+

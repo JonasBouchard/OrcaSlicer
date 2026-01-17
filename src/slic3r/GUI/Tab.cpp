@@ -4922,6 +4922,7 @@ if (is_marlin_flavor)
         optgroup->append_single_option_line("parking_pos_retraction", "printer_multimaterial_semm_parameters#filament-parking-position");
         optgroup->append_single_option_line("extra_loading_move", "printer_multimaterial_semm_parameters#extra-loading-distance");
         optgroup->append_single_option_line("high_current_on_filament_swap", "printer_multimaterial_semm_parameters#high-extruder-current-on-filament-swap");
+        
         optgroup = page->new_optgroup(L("Advanced"), L"param_advanced");
         optgroup->append_single_option_line("machine_load_filament_time", "printer_multimaterial_advanced#filament-load-time");
         optgroup->append_single_option_line("machine_unload_filament_time", "printer_multimaterial_advanced#filament-unload-time");
@@ -4932,9 +4933,7 @@ if (is_marlin_flavor)
 
     // Orca: build missed extruder pages
     for (auto extruder_idx = m_extruders_count_old; extruder_idx < m_extruders_count; ++extruder_idx) {
-        const wxString& page_name = (m_extruders_count > 1)
-            ? wxString::Format("Extruder %d", filament_index_from_zero_based(static_cast<int>(extruder_idx)))
-            : wxString::Format("Extruder");
+        const wxString& page_name = (m_extruders_count > 1) ? wxString::Format("Extruder %d", filament_index_from_zero_based(static_cast<int>(extruder_idx))) : wxString::Format("Extruder");
 
         //# build page
         //const wxString& page_name = wxString::Format("Extruder %d", int(extruder_idx + 1));
@@ -5062,9 +5061,7 @@ if (is_marlin_flavor)
                       m_pages.begin() + n_before_extruders + m_extruders_count_old);
     }
     for (size_t extruder_idx = 0; extruder_idx < m_extruders_count; ++extruder_idx) {
-        wxString page_title = (m_extruders_count > 1)
-            ? wxString::Format("Extruder %d", filament_index_from_zero_based(static_cast<int>(extruder_idx)))
-            : wxString("Extruder");
+        wxString page_title = (m_extruders_count > 1) ? wxString::Format("Extruder %d", filament_index_from_zero_based(static_cast<int>(extruder_idx))) : wxString("Extruder");
         m_pages[n_before_extruders + extruder_idx]->set_title(page_title);
     }
     const wxString& first_extruder_title = m_pages[n_before_extruders]->title();
@@ -5112,9 +5109,7 @@ void TabPrinter::refresh_extruder_page_titles(bool start_at_zero)
         if (page_index >= m_pages.size())
             break;
 
-        wxString page_title = (m_extruders_count > 1)
-            ? wxString::Format("Extruder %d", static_cast<int>(extruder_idx) + (start_at_zero ? 0 : 1))
-            : wxString("Extruder");
+        wxString page_title = (m_extruders_count > 1) ? wxString::Format("Extruder %d", static_cast<int>(extruder_idx) + (start_at_zero ? 0 : 1)) : wxString("Extruder");
         m_pages[page_index]->set_title(page_title);
     }
 
