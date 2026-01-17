@@ -1543,7 +1543,7 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         wxGetApp().plater()->update();
         if (m_type == Preset::TYPE_PRINTER) {
             if (auto* printer_tab = dynamic_cast<TabPrinter*>(this))
-                printer_tab->build_unregular_pages();
+                printer_tab->refresh_extruder_page_titles(boost::any_cast<bool>(value));
         }
     }
 
@@ -5087,6 +5087,45 @@ if (is_marlin_flavor)
     reload_config();
 
     // apply searcher with current configuration
+    apply_searcher();
+}
+
+void TabPrinter::refresh_extruder_page_titles(bool start_at_zero)
+{
+    if (m_pages.empty() || m_extruders_count == 0)
+        return;
+
+    size_t first_extruder_page = m_pages.size();
+    for (size_t i = 0; i < m_pages.size(); ++i) {
+        const wxString& title = m_pages[i]->title();
+        if (title == "Extruder" || title.StartsWith("Extruder ")) {
+            first_extruder_page = i;
+            break;
+        }
+    }
+    if (first_extruder_page >= m_pages.size())
+        return;
+
+    for (size_t extruder_idx = 0; extruder_idx < m_extruders_count; ++extruder_idx) {
+        const size_t page_index = first_extruder_page + extruder_idx;
+        if (page_index >= m_pages.size())
+            break;
+
+        wxString page_title = (m_extruders_count > 1)
+            ? wxString::Format("Extruder %d", static_cast<int>(extruder_idx) + (start_at_zero ? 0 : 1))
+            : wxString("Extruder");
+        m_pages[page_index]->set_title(page_title);
+    }
+
+    const wxString& first_extruder_title = m_pages[first_extruder_page]->title();
+    auto& searcher = wxGetApp().sidebar().get_searcher();
+    for (auto& group : m_pages[first_extruder_page]->m_optgroups) {
+        group->set_config_category_and_type(first_extruder_title, m_type);
+        for (auto& opt : group->opt_map())
+            searcher.add_key(opt.first + "#0", m_type, group->title, first_extruder_title);
+    }
+
+    rebuild_page_tree();
     apply_searcher();
 }
 
