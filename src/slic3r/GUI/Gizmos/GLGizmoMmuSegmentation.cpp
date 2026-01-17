@@ -192,7 +192,7 @@ void GLGizmoMmuSegmentation::data_changed(bool is_serializing)
 // BBS
 bool GLGizmoMmuSegmentation::on_number_key_down(int number)
 {
-    int extruder_idx = start_filament_index_at_0() ? number : number - 1;
+    int extruder_idx = zero_based_filament_indexing() ? number : number - 1;
     if (extruder_idx < m_extruders_colors.size() && extruder_idx >= 0)
         m_selected_extruder_idx = extruder_idx;
 

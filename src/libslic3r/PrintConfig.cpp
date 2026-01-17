@@ -4428,9 +4428,9 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(-2.));
 
-    def          = this->add("start_filament_index_at_0", coBool);
-    def->label   = L("Start filament index at 0");
-    def->tooltip = L("When enabled, filament/extruder indices in OrcaSlicer's interface are treated as 0-based (0..N-1) instead of 1-based (1..N).");
+    def          = this->add("zero_based_filament_indexing", coBool);
+    def->label   = L("0-based_filament_indexing");
+    def->tooltip = L("When enabled, 0-based filament indexing is used in OrcaSlicer's interface (0..N-1 instead of 1..N).");
     def->mode    = comAdvanced;
     def->set_default_value(new ConfigOptionBool(true));
 

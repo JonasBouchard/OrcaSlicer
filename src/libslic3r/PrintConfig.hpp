@@ -1385,7 +1385,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                purge_in_prime_tower))
     ((ConfigOptionBool,                enable_filament_ramming))
     ((ConfigOptionBool,                support_multi_bed_types))
-    ((ConfigOptionBool,                start_filament_index_at_0))
+    ((ConfigOptionBool,                zero_based_filament_indexing))
 
 
     // Small Area Infill Flow Compensation
