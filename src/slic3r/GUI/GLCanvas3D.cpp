@@ -3962,7 +3962,7 @@ void GLCanvas3D::on_render_timer(wxTimerEvent& evt)
     // no need to wake up idle
     // right after this event, idle event is fired
     // m_dirty = true;
-
+    // wxWakeUpIdle();
 }
 
 void GLCanvas3D::on_set_color_timer(wxTimerEvent& evt)
