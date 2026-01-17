@@ -844,7 +844,7 @@ struct DynamicFilamentList1Based : DynamicFilamentList
             return -1;
         if (!zero_based_filament_indexing())
             --n;
-        return (n >= 0 && n <= static_cast<long>(items.size())) ? int(n) : -1;
+        return (n >= 0 && n < static_cast<long>(items.size())) ? int(n) : -1;
     }
     void update(bool force = false)
     {
