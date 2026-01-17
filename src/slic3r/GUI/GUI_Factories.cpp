@@ -1530,8 +1530,7 @@ void MenuFactory::create_filament_action_menu(bool init, int active_filament_men
 
         const int display_index = filament_index_from_zero_based(i);
         auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i]);
-        wxString item_name = preset ? wxString::Format("%d: %s", display_index, from_u8(preset->label(false)))
-                                    : wxString::Format(_L("Filament %d"), display_index);
+        wxString item_name = preset ? wxString::Format("%d: %s", display_index, from_u8(preset->label(false))) : wxString::Format(_L("Filament %d"), display_index);
 
         append_menu_item(sub_menu, wxID_ANY, item_name, "",
             [i](wxCommandEvent&) { plater()->sidebar().change_filament(-2, i); }, *icons[i], menu,

@@ -9492,8 +9492,7 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
             if (error_iter != m_gcode_viewer.m_gcode_check_result.print_area_error_infos.begin()) {
                 text += "\n";
             }
-            const int extruder_index = error_iter->first;
-            const int extruder_id = filament_index_from_zero_based(extruder_index);
+            int extruder_id = filament_index_from_zero_based(error_iter->first);
             std::string filaments;
             std::vector<int> slice_error_object_idxs;
             for (size_t i = 0; i < error_iter->second.size(); ++i) {
