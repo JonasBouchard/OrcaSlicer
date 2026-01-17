@@ -5056,15 +5056,17 @@ if (is_marlin_flavor)
     }
     // BBS. No extra extruder page for single physical extruder machine
     // # remove extra pages
-    auto &first_extruder_title = const_cast<wxString &>(m_pages[n_before_extruders]->title());
     if (m_extruders_count < m_extruders_count_old) {
-        m_pages.erase(	m_pages.begin() + n_before_extruders + m_extruders_count,
-                        m_pages.begin() + n_before_extruders + m_extruders_count_old);
-        if (m_extruders_count == 1)
-            first_extruder_title = wxString::Format("Extruder");
-    } else if (m_extruders_count_old == 1) {
-        first_extruder_title = wxString::Format("Extruder %d", filament_index_from_zero_based(0));
+        m_pages.erase(m_pages.begin() + n_before_extruders + m_extruders_count,
+                      m_pages.begin() + n_before_extruders + m_extruders_count_old);
     }
+    for (size_t extruder_idx = 0; extruder_idx < m_extruders_count; ++extruder_idx) {
+        wxString page_title = (m_extruders_count > 1)
+            ? wxString::Format("Extruder %d", filament_index_from_zero_based(static_cast<int>(extruder_idx)))
+            : wxString("Extruder");
+        m_pages[n_before_extruders + extruder_idx]->set_title(page_title);
+    }
+    const wxString& first_extruder_title = m_pages[n_before_extruders]->title();
     auto & searcher = wxGetApp().sidebar().get_searcher();
     for (auto &group : m_pages[n_before_extruders]->m_optgroups) {
         group->set_config_category_and_type(first_extruder_title, m_type);
@@ -7085,6 +7087,16 @@ void Page::reload_config()
 {
     for (auto group : m_optgroups)
         group->reload_config();
+}
+
+void Page::set_title(const wxString& title)
+{
+    if (m_title == title)
+        return;
+
+    m_title = title;
+    if (m_page_title)
+        m_page_title->SetLabel(_(m_title));
 }
 
 void Page::update_visibility(ConfigOptionMode mode, bool update_contolls_visibility)
