@@ -1205,6 +1205,7 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas, Bed3D &bed)
     if (m_canvas != nullptr) {
         m_timer.SetOwner(m_canvas);
         m_render_timer.SetOwner(m_canvas);
+        m_timer_set_color.SetOwner(m_canvas);
 #if ENABLE_RETINA_GL
         m_retina_helper.reset(new RetinaHelper(canvas));
 #endif // ENABLE_RETINA_GL
@@ -1219,8 +1220,12 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas, Bed3D &bed)
     // FIXME: maybe should be using GUI::shortkey_alt_prefix() or equivalent?
     m_assembly_view_desc["part_selection_caption"]   = _L("Alt+") + _L("Left mouse button");
     m_assembly_view_desc["part_selection"]           = _L("part selection");
-    m_assembly_view_desc["number_key_caption"]       = "1~16 " + _L("number keys");
-    m_assembly_view_desc["number_key"]       = _L("number keys can quickly change the color of objects");
+    m_assembly_view_desc["number_key_caption"]       = "0-16 " + _L("number keys");
+    if (GUI::zero_based_filament_indexing()) {
+        m_assembly_view_desc["number_key"] = _L("number keys can quickly change the color of objects (0 selects filament 0)");
+    } else {
+        m_assembly_view_desc["number_key"] = _L("number keys can quickly change the color of objects (0 selects filament 10)");
+    }
 }
 
 GLCanvas3D::~GLCanvas3D()
@@ -3397,14 +3402,13 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
             break;
         }
 
-        // BBS: use keypad to change extruder
         case '1': {
             if (!m_timer_set_color.IsRunning()) {
                 m_timer_set_color.StartOnce(500);
                 break;
             }
         }
-        case '0':   //Color logic for material 10
+        case '0':
         case '2':
         case '3':
         case '4':
@@ -3413,12 +3417,19 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
         case '7':
         case '8':
         case '9': {
-            if (m_timer_set_color.IsRunning()) {
-                if (keyCode < '7')  keyCode += 10;
-                m_timer_set_color.Stop();
+            if (m_gizmos.get_current_type() != GLGizmosManager::MmSegmentation) {
+                int display_index = keyCode - '0';
+                if (m_timer_set_color.IsRunning()) {
+                    if (keyCode < '7')
+                        display_index += 10;
+                    m_timer_set_color.Stop();
+                } else if (!GUI::zero_based_filament_indexing() && keyCode == '0') {
+                    display_index = 10;
+                }
+
+                const int extruder_id = GUI::zero_based_filament_indexing() ? display_index + 1 : display_index;
+                obj_list->set_extruder_for_selected_items(extruder_id);
             }
-            if (m_gizmos.get_current_type() != GLGizmosManager::MmSegmentation)
-                obj_list->set_extruder_for_selected_items(keyCode - '0');
             break;
         }
 
@@ -3953,17 +3964,19 @@ void GLCanvas3D::on_render_timer(wxTimerEvent& evt)
     // no need to wake up idle
     // right after this event, idle event is fired
     // m_dirty = true;
-    // wxWakeUpIdle();
+
 }
 
 void GLCanvas3D::on_set_color_timer(wxTimerEvent& evt)
 {
     auto obj_list = wxGetApp().obj_list();
-    if (m_gizmos.get_current_type() != GLGizmosManager::MmSegmentation)
-        obj_list->set_extruder_for_selected_items(1);
+    if (m_gizmos.get_current_type() != GLGizmosManager::MmSegmentation) {
+        const int display_index = 1;
+        const int extruder_id = GUI::zero_based_filament_indexing() ? display_index + 1 : display_index;
+        obj_list->set_extruder_for_selected_items(extruder_id);
+    }
     m_timer_set_color.Stop();
 }
-
 
 void GLCanvas3D::schedule_extra_frame(int miliseconds)
 {
