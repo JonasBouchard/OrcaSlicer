@@ -83,7 +83,7 @@ static wxString format_filament_index_for_display(int extruder_id)
     if (extruder_id <= 0)
         return wxString::Format("%d", extruder_id);
 
-    return wxString::Format("%d", filament_index_from_zero_based(extruder_id));
+    return wxString::Format("%d", extruder_id);
 }
 
 static void take_snapshot(const std::string& snapshot_name)

@@ -50,7 +50,7 @@ static wxString format_filament_index_for_display(int extruder_id)
     if (extruder_id <= 0)
         return wxString::Format("%d", extruder_id);
 
-    return wxString::Format("%d", filament_index_from_zero_based(extruder_id));
+    return wxString::Format("%d", extruder_id);
 }
 
 ObjectDataViewModelNode::ObjectDataViewModelNode(PartPlate* part_plate, wxString name) :
@@ -1762,12 +1762,6 @@ int ObjectDataViewModel::GetExtruderNumber(const wxDataViewItem& item) const
     const long value           = std::strtol(extruder.c_str(), &end, 10);
     if (end == extruder.c_str() || *end != '\0')
         return 0;
-
-    if (start_filament_index_at_0())
-        return static_cast<int>(value);
-
-    if (value > 0)
-        return static_cast<int>(value) - 1;
 
     return static_cast<int>(value);
 }
