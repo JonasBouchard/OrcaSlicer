@@ -528,7 +528,6 @@ private:
     unsigned int m_last_w, m_last_h;
     bool m_in_render;
     wxTimer m_timer;
-    wxTimer m_timer_set_color;
     LayersEditing m_layers_editing;
     Mouse m_mouse;
     GLGizmosManager m_gizmos;
