@@ -1540,6 +1540,7 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
     if (opt_key == "start_filament_index_at_0") {
         wxGetApp().sidebar().update_dynamic_filament_list();
         wxGetApp().sidebar().update_all_preset_comboboxes();
+        wxGetApp().obj_list()->update_objects_list_filament_column(wxGetApp().filaments_cnt());
         wxGetApp().plater()->update();
         if (m_type == Preset::TYPE_PRINTER) {
             if (auto* printer_tab = dynamic_cast<TabPrinter*>(this))
