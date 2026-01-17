@@ -1205,7 +1205,6 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas, Bed3D &bed)
     if (m_canvas != nullptr) {
         m_timer.SetOwner(m_canvas);
         m_render_timer.SetOwner(m_canvas);
-        m_timer_set_color.SetOwner(m_canvas);
 #if ENABLE_RETINA_GL
         m_retina_helper.reset(new RetinaHelper(canvas));
 #endif // ENABLE_RETINA_GL
