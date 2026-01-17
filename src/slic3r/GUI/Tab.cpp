@@ -1541,6 +1541,10 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         wxGetApp().sidebar().update_dynamic_filament_list();
         wxGetApp().sidebar().update_all_preset_comboboxes();
         wxGetApp().plater()->update();
+        if (m_type == Preset::TYPE_PRINTER) {
+            if (auto* printer_tab = dynamic_cast<TabPrinter*>(this))
+                printer_tab->build_unregular_pages();
+        }
     }
 
     if(opt_key == "purge_in_prime_tower")
