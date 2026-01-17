@@ -1758,8 +1758,8 @@ int ObjectDataViewModel::GetExtruderNumber(const wxDataViewItem& item) const
 		return 0;
 
     const std::string extruder = node->m_extruder.ToStdString();
-    char* end                  = nullptr;
-    const long value           = std::strtol(extruder.c_str(), &end, 10);
+    char* end = nullptr;
+    const long value = std::strtol(extruder.c_str(), &end, 10);
     if (end == extruder.c_str() || *end != '\0')
         return 0;
 
@@ -2509,3 +2509,5 @@ void ObjectDataViewModel::UpdateCutObjectIcon(const wxDataViewItem &item, bool h
 
 } // namespace GUI
 } // namespace Slic3r
+
+
