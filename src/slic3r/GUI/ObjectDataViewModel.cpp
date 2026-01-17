@@ -48,7 +48,7 @@ static constexpr char LockIcon[]            = "cut_";
 static wxString format_filament_index_for_display(int extruder_id)
 {
     if (extruder_id <= 0)
-        return wxString::Format("%d", extruder_id);
+        return _L("default");
 
     return wxString::Format("%d", filament_index_from_one_based(extruder_id));
 }
@@ -350,7 +350,8 @@ bool ObjectDataViewModelNode::SetValue(const wxVariant& variant, unsigned col)
         DataViewBitmapText data;
         data << variant;
         m_extruder_bmp = data.GetBitmap();
-        m_extruder = data.GetText() == "0" ? _(L("default")) : data.GetText();
+        const wxString text = data.GetText();
+        m_extruder = (text == "0" && !start_filament_index_at_0()) ? _(L("default")) : text;
         return true; }
     // BBS
     case colSupportPaint:
@@ -408,7 +409,11 @@ void ObjectDataViewModelNode::UpdateExtruderAndColorIcon(wxString extruder /*= "
 
     // update color icon
     size_t extruder_idx = atoi(extruder.c_str());
-    if (extruder_idx == 0) {
+    const wxString default_label = _(L("default"));
+    if (start_filament_index_at_0() && extruder_idx == 0 && extruder != default_label) {
+        extruder_idx = 1;
+    }
+    if (extruder_idx == 0 && (!start_filament_index_at_0() || extruder == default_label)) {
         if (m_type & itObject);
         else if (m_type & itVolume && m_volume_type == ModelVolumeType::MODEL_PART) {
             extruder_idx = atoi(m_parent->GetExtruder().c_str());

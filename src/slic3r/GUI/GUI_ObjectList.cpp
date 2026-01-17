@@ -81,7 +81,7 @@ static int filaments_count()
 static wxString format_filament_index_for_display(int extruder_id)
 {
     if (extruder_id <= 0)
-        return wxString::Format("%d", extruder_id);
+        return _L("default");
 
     return wxString::Format("%d", filament_index_from_one_based(extruder_id));
 }

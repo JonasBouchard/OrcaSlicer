@@ -929,7 +929,7 @@ void MenuFactory::append_menu_item_change_extruder(wxMenu* menu)
             if (preset == nullptr) {
                 item_name = wxString::Format(_L("Filament %d"), display_index);
             } else {
-                item_name = wxString::Format("%d: %s", display_index, from_u8(preset->label(false)));
+                item_name = from_u8(preset->label(false));
             }
         }
 
@@ -2092,7 +2092,7 @@ void MenuFactory::append_menu_item_change_filament(wxMenu* menu)
             if (preset == nullptr) {
                 item_name = wxString::Format(_L("Filament %d"), display_index);
             } else {
-                item_name = wxString::Format("%d: %s", display_index, from_u8(preset->label(false)));
+                item_name = from_u8(preset->label(false));
             }
         }
 
