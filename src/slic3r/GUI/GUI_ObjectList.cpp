@@ -8,6 +8,7 @@
 #include "Plater.hpp"
 #include "BitmapComboBox.hpp"
 #include "MainFrame.hpp"
+#include "GUI.hpp"
 #include "slic3r/Utils/UndoRedo.hpp"
 
 #include "OptionsGroup.hpp"
@@ -48,6 +49,36 @@ namespace Slic3r
 {
 namespace GUI
 {
+
+namespace {
+
+bool is_valid_filament_shortcut(int shortcut_value, int filament_count)
+{
+    if (zero_based_filament_indexing())
+        return shortcut_value >= 0 && shortcut_value < filament_count;
+
+    return shortcut_value >= 1 && shortcut_value <= filament_count;
+}
+
+int extruder_from_shortcut(int shortcut_value)
+{
+    return zero_based_filament_indexing() ? shortcut_value + 1 : shortcut_value;
+}
+
+std::vector<int> filament_shortcut_keys()
+{
+    std::vector<int> keys;
+    if (zero_based_filament_indexing()) {
+        for (int value = 0; value <= 9; ++value)
+            keys.push_back(value);
+    } else {
+        for (int value = 1; value <= 9; ++value)
+            keys.push_back(value);
+    }
+    return keys;
+}
+
+} // namespace
 
 wxDEFINE_EVENT(EVT_OBJ_LIST_OBJECT_SELECT, SimpleEvent);
 wxDEFINE_EVENT(EVT_PARTPLATE_LIST_PLATE_SELECT, IntEvent);
@@ -251,32 +282,37 @@ ObjectList::ObjectList(wxWindow* parent) :
     // On the other hand, using accelerators will break in-place editing on Windows & Linux/GTK (there is no in-place editing working on OSX for wxDataViewCtrl for now).
 //    Bind(wxEVT_KEY_DOWN, &ObjectList::OnChar, this);
     {
-        // Accelerators
-        // 	wxAcceleratorEntry entries[25];
-        wxAcceleratorEntry entries[26];
-        int index = 0;
-        entries[index++].Set(wxACCEL_CTRL, (int)'C', wxID_COPY);
-        entries[index++].Set(wxACCEL_CTRL, (int)'X', wxID_CUT);
-        entries[index++].Set(wxACCEL_CTRL, (int)'V', wxID_PASTE);
-        entries[index++].Set(wxACCEL_CTRL, (int)'M', wxID_DUPLICATE);
-        entries[index++].Set(wxACCEL_CTRL, (int)'A', wxID_SELECTALL);
-        entries[index++].Set(wxACCEL_CTRL, (int)'Z', wxID_UNDO);
-        entries[index++].Set(wxACCEL_CTRL, (int)'Y', wxID_REDO);
-        entries[index++].Set(wxACCEL_NORMAL, WXK_BACK, wxID_DELETE);
-        //entries[index++].Set(wxACCEL_NORMAL, int('+'), wxID_ADD);
-        //entries[index++].Set(wxACCEL_NORMAL, WXK_NUMPAD_ADD, wxID_ADD);
-        //entries[index++].Set(wxACCEL_NORMAL, int('-'), wxID_REMOVE);
-        //entries[index++].Set(wxACCEL_NORMAL, WXK_NUMPAD_SUBTRACT, wxID_REMOVE);
-        //entries[index++].Set(wxACCEL_NORMAL, int('p'), wxID_PRINT);
+        std::vector<wxAcceleratorEntry> entries;
+        entries.reserve(32);
+        auto add_entry = [&entries](int flags, int key, int command_id) {
+            wxAcceleratorEntry entry;
+            entry.Set(flags, key, command_id);
+            entries.push_back(entry);
+        };
 
-        int numbers_cnt = 0;
-        for (auto char_number : { '1', '2', '3', '4', '5', '6', '7', '8', '9' }) {
-            entries[index + numbers_cnt].Set(wxACCEL_NORMAL, int(char_number), wxID_LAST + numbers_cnt+1);
-            entries[index + 9 + numbers_cnt].Set(wxACCEL_NORMAL, WXK_NUMPAD0 + numbers_cnt - 1, wxID_LAST + numbers_cnt+1);
-            numbers_cnt++;
-            // index++;
+        add_entry(wxACCEL_CTRL, (int)'C', wxID_COPY);
+        add_entry(wxACCEL_CTRL, (int)'X', wxID_CUT);
+        add_entry(wxACCEL_CTRL, (int)'V', wxID_PASTE);
+        add_entry(wxACCEL_CTRL, (int)'M', wxID_DUPLICATE);
+        add_entry(wxACCEL_CTRL, (int)'A', wxID_SELECTALL);
+        add_entry(wxACCEL_CTRL, (int)'Z', wxID_UNDO);
+        add_entry(wxACCEL_CTRL, (int)'Y', wxID_REDO);
+        add_entry(wxACCEL_NORMAL, WXK_BACK, wxID_DELETE);
+        //add_entry(wxACCEL_NORMAL, int('+'), wxID_ADD);
+        //add_entry(wxACCEL_NORMAL, WXK_NUMPAD_ADD, wxID_ADD);
+        //add_entry(wxACCEL_NORMAL, int('-'), wxID_REMOVE);
+        //add_entry(wxACCEL_NORMAL, WXK_NUMPAD_SUBTRACT, wxID_REMOVE);
+        //add_entry(wxACCEL_NORMAL, int('p'), wxID_PRINT);
+
+        const std::vector<int> shortcut_keys = filament_shortcut_keys();
+        for (size_t idx = 0; idx < shortcut_keys.size(); ++idx) {
+            const int key_value = shortcut_keys[idx];
+            const int command_id = wxID_LAST + static_cast<int>(idx) + 1;
+            add_entry(wxACCEL_NORMAL, int('0' + key_value), command_id);
+            add_entry(wxACCEL_NORMAL, WXK_NUMPAD0 + key_value, command_id);
         }
-        wxAcceleratorTable accel(26, entries);
+
+        wxAcceleratorTable accel(static_cast<int>(entries.size()), entries.data());
         SetAcceleratorTable(accel);
 
         this->Bind(wxEVT_MENU, [this](wxCommandEvent &evt) { this->copy();                      }, wxID_COPY);
@@ -291,11 +327,15 @@ ObjectList::ObjectList(wxWindow* parent) :
         //this->Bind(wxEVT_MENU, [this](wxCommandEvent &evt) { this->decrease_instances();        }, wxID_REMOVE);
         //this->Bind(wxEVT_MENU, [this](wxCommandEvent &evt) { this->toggle_printable_state();    }, wxID_PRINT);
 
-        for (int i = 1; i < 10; i++)
-            this->Bind(wxEVT_MENU, [this, i](wxCommandEvent &evt) {
-                if (filaments_count() > 1 && i <= filaments_count())
-                    this->set_extruder_for_selected_items(i);
-            }, wxID_LAST+i);
+        for (size_t idx = 0; idx < shortcut_keys.size(); ++idx) {
+            const int key_value = shortcut_keys[idx];
+            const int extruder_number = extruder_from_shortcut(key_value);
+            const int command_id = wxID_LAST + static_cast<int>(idx) + 1;
+            this->Bind(wxEVT_MENU, [this, extruder_number](wxCommandEvent &evt) {
+                if (filaments_count() > 1 && extruder_number <= filaments_count())
+                    this->set_extruder_for_selected_items(extruder_number);
+            }, command_id);
+        }
 
         m_accel = accel;
     }
@@ -1759,8 +1799,8 @@ void ObjectList::key_event(wxKeyEvent& event)
         if (std::find(numbers.begin(), numbers.end(), key_char) != numbers.end()) {
             long extruder_number;
             if (wxNumberFormatter::FromString(wxString(key_char), &extruder_number) &&
-                filaments_count() >= extruder_number)
-                set_extruder_for_selected_items(int(extruder_number));
+                is_valid_filament_shortcut(static_cast<int>(extruder_number), filaments_count()))
+                set_extruder_for_selected_items(extruder_from_shortcut(static_cast<int>(extruder_number)));
         }
         else
             event.Skip();
