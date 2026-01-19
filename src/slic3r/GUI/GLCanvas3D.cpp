@@ -33,7 +33,6 @@
 #include "format.hpp"
 #include "DailyTips.hpp"
 #include "FilamentMapDialog.hpp"
-#include "Gizmos/GLGizmoUtils.hpp"
 
 #include "slic3r/GUI/Gizmos/GLGizmoPainterBase.hpp"
 #include "slic3r/Utils/UndoRedo.hpp"
@@ -225,6 +224,43 @@ bool GLCanvas3D::LayersEditing::is_allowed() const
 
 float GLCanvas3D::LayersEditing::s_overlay_window_width;
 
+void GLCanvas3D::LayersEditing::show_tooltip_information(const GLCanvas3D& canvas, std::map<wxString, wxString> captions_texts, float x, float y)
+{
+    ImTextureID normal_id = canvas.get_gizmos_manager().get_icon_texture_id(GLGizmosManager::MENU_ICON_NAME::IC_TOOLBAR_TOOLTIP);
+    ImTextureID hover_id = canvas.get_gizmos_manager().get_icon_texture_id(GLGizmosManager::MENU_ICON_NAME::IC_TOOLBAR_TOOLTIP_HOVER);
+
+    ImGuiWrapper& imgui = *wxGetApp().imgui();
+    float caption_max = 0.f;
+    for (auto caption_text : captions_texts) {
+        caption_max = std::max(imgui.calc_text_size(caption_text.first).x, caption_max);
+    }
+    caption_max += GImGui->Style.WindowPadding.x + imgui.scaled(1);
+
+	float  scale       = canvas.get_scale();
+    #ifdef WIN32
+        int dpi = get_dpi_for_window(wxGetApp().GetTopWindow());
+        scale *= (float) dpi / (float) DPI_DEFAULT;
+    #endif // WIN32
+    ImVec2 button_size = ImVec2(25 * scale, 25 * scale); // ORCA: Use exact resolution will prevent blur on icon
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {0, 0}); // ORCA: Dont add padding
+    ImGui::ImageButton3(normal_id, hover_id, button_size);
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::BeginTooltip2(ImVec2(x, y));
+        auto draw_text_with_caption = [this, &caption_max, &imgui](const wxString& caption, const wxString& text) {
+            imgui.text_colored(ImGuiWrapper::COL_ACTIVE, caption);
+            ImGui::SameLine(caption_max);
+            imgui.text_colored(ImGuiWrapper::COL_WINDOW_BG, text);
+        };
+
+        for (const auto& caption_text : captions_texts) draw_text_with_caption(caption_text.first, caption_text.second);
+
+        ImGui::EndTooltip();
+    }
+    ImGui::PopStyleVar(2);
+}
+
 void GLCanvas3D::LayersEditing::render_variable_layer_height_dialog(const GLCanvas3D& canvas) {
     if (!m_enabled)
         return;
@@ -322,18 +358,15 @@ void GLCanvas3D::LayersEditing::render_variable_layer_height_dialog(const GLCanv
 
     ImGui::Separator();
 
-    const wxString shift = GUI::shortkey_shift_prefix();
-    std::vector<std::pair<wxString, wxString>> shortcuts = {
-        {_L("Left mouse button"),          _L("Add detail")},
-        {_L("Right mouse button"),         _L("Remove detail")},
-        {shift + _L("Left mouse button"),  _L("Reset to base")},
-        {shift + _L("Right mouse button"), _L("Smoothing")},
-        {_L("Mouse wheel"),                _L("Increase/decrease edit area")}
+    float get_cur_y = ImGui::GetContentRegionMax().y + ImGui::GetFrameHeight() + canvas.m_main_toolbar.get_height();
+    std::map<wxString, wxString> captions_texts = {
+        {_L("Left mouse button") + ":" , _L("Add detail")},
+        {_L("Right mouse button") + ":", _L("Remove detail")},
+        {_L("Shift+") + _L("Left mouse button") + ":", _L("Reset to base")},
+        {_L("Shift+") + _L("Right mouse button") + ":", _L("Smoothing")},
+        {_L("Mouse wheel:"), _L("Increase/decrease edit area")}
     };
-
-    float y = canvas.m_main_toolbar.get_height();
-    GLGizmoUtils::render_tooltip_button(&imgui, canvas, shortcuts, x, y);
-
+    show_tooltip_information(canvas, captions_texts, x, get_cur_y);
     ImGui::SameLine();
     if (imgui.button(_L("Reset")))
         wxPostEvent((wxEvtHandler*)canvas.get_wxglcanvas(), SimpleEvent(EVT_GLCANVAS_RESET_LAYER_HEIGHT_PROFILE));
@@ -1047,8 +1080,6 @@ wxDEFINE_EVENT(EVT_CUSTOMEVT_TICKSCHANGED, wxCommandEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_RESET_LAYER_HEIGHT_PROFILE, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_ADAPTIVE_LAYER_HEIGHT_PROFILE, Event<float>);
 wxDEFINE_EVENT(EVT_GLCANVAS_SMOOTH_LAYER_HEIGHT_PROFILE, HeightProfileSmoothEvent);
-wxDEFINE_EVENT(EVT_GLCANVAS_PRINTABLE, SimpleEvent);
-
 
 const double GLCanvas3D::DefaultCameraZoomToBoxMarginFactor = 1.25;
 const double GLCanvas3D::DefaultCameraZoomToBedMarginFactor = 2.00;
@@ -1191,13 +1222,13 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas, Bed3D &bed)
 
     m_selection.set_volumes(&m_volumes.volumes);
 
-    const wxString alt   = GUI::shortkey_alt_prefix();
-
-    m_shortcuts_assembly_view = {
-        {_L("Left mouse button"),       _L("Object Selection")},
-        {alt + _L("Left mouse button"), _L("Part Selection")},
-        {"1~16 " + _L("number keys"),   _L("Number keys can quickly change the color of objects")},
-    };
+    m_assembly_view_desc["object_selection_caption"] = _L("Left mouse button");
+    m_assembly_view_desc["object_selection"]         = _L("Object selection");
+    // FIXME: maybe should be using GUI::shortkey_alt_prefix() or equivalent?
+    m_assembly_view_desc["part_selection_caption"]   = _L("Alt+") + _L("Left mouse button");
+    m_assembly_view_desc["part_selection"]           = _L("Part selection");
+    m_assembly_view_desc["number_key_caption"]       = "1~16 " + _L("number keys");
+    m_assembly_view_desc["number_key"]       = _L("Number keys can quickly change the color of objects");
 }
 
 GLCanvas3D::~GLCanvas3D()
@@ -3491,8 +3522,6 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
         //    }
         //    break;
         //}
-        case 'v':
-        case 'V': { post_event(SimpleEvent(EVT_GLCANVAS_PRINTABLE)); break; }
         default:  { evt.Skip(); break; }
         }
     }
@@ -3964,14 +3993,14 @@ void GLCanvas3D::on_set_color_timer(wxTimerEvent& evt)
 }
 
 
-void GLCanvas3D::schedule_extra_frame(int milliseconds)
+void GLCanvas3D::schedule_extra_frame(int miliseconds)
 {
     // Schedule idle event right now
-    if (milliseconds == 0)
+    if (miliseconds == 0)
     {
-        // We want to wakeup idle event but most likely this is call inside render cycle so we need to wait
+        // We want to wakeup idle evnt but most likely this is call inside render cycle so we need to wait
         if (m_in_render)
-            milliseconds = 33;
+            miliseconds = 33;
         else {
             m_dirty = true;
             wxWakeUpIdle();
@@ -3981,12 +4010,12 @@ void GLCanvas3D::schedule_extra_frame(int milliseconds)
     int remaining_time = m_render_timer.GetInterval();
     // Timer is not running
     if (!m_render_timer.IsRunning()) {
-        m_render_timer.StartOnce(milliseconds);
-    // Timer is running - restart only if new period is shorter than remaining period
+        m_render_timer.StartOnce(miliseconds);
+    // Timer is running - restart only if new period is shorter than remaning period
     } else {
-        if (milliseconds + 20 < remaining_time) {
+        if (miliseconds + 20 < remaining_time) {
             m_render_timer.Stop();
-            m_render_timer.StartOnce(milliseconds);
+            m_render_timer.StartOnce(miliseconds);
         }
     }
 }
@@ -8884,32 +8913,45 @@ void GLCanvas3D::_render_paint_toolbar() const
     ImGui::PopStyleColor();
 }
 
-float GLCanvas3D::_render_assembly_tooltip_button(ImGuiWrapper* imgui_wrapper) const
+float GLCanvas3D::_show_assembly_tooltip_information(float caption_max, float x, float y) const
 {
-    const float text_height = imgui_wrapper->calc_text_size(_L("part selection")).y;
-    ImVec2      windowPos   = ImGui::GetWindowPos();
-    float       x           = windowPos.x;
-    float       y           = windowPos.y - ImGui::GetFrameHeight() - (5 * text_height);
-    y -= ImGui::GetContentRegionMax().y + ImGui::GetFrameHeight(); // correct default ToolTipButton behaviour
+    ImGuiWrapper *imgui     = wxGetApp().imgui();
+    ImTextureID normal_id = m_gizmos.get_icon_texture_id(GLGizmosManager::MENU_ICON_NAME::IC_TOOLBAR_TOOLTIP);
+    ImTextureID hover_id  = m_gizmos.get_icon_texture_id(GLGizmosManager::MENU_ICON_NAME::IC_TOOLBAR_TOOLTIP_HOVER);
 
-    GLGizmoUtils::render_tooltip_button(imgui_wrapper, *this, m_shortcuts_assembly_view, x, y);
-    ImGui::SameLine();
-    ImGui::Dummy(ImVec2(12.f, 0.f));
+    caption_max += imgui->calc_text_size(": "sv).x + 35.f;
 
-    float scale = get_scale();
-#ifdef WIN32
-    int dpi = get_dpi_for_window(wxGetApp().GetTopWindow());
-    scale *= (float) dpi / (float) DPI_DEFAULT;
-#endif                                                   // WIN32
+    float  scale       = get_scale();
+    #ifdef WIN32
+        int dpi = get_dpi_for_window(wxGetApp().GetTopWindow());
+        scale *= (float) dpi / (float) DPI_DEFAULT;
+    #endif // WIN32
     ImVec2 button_size = ImVec2(25 * scale, 25 * scale); // ORCA: Use exact resolution will prevent blur on icon
 
-    float same_line_width = button_size.x * 1.8; // with an space size
-    ImGui::SameLine(same_line_width);
-    same_line_width = imgui_wrapper->calc_text_size("|"sv).x + same_line_width + imgui_wrapper->calc_text_size("  "sv).x;
-    imgui_wrapper->text_colored(ImGuiWrapper::COL_ACTIVE, "|");
-    ImGui::SameLine(same_line_width);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {0, ImGui::GetStyle().FramePadding.y});
+    ImGui::ImageButton3(normal_id, hover_id, button_size);
 
-    return same_line_width; // return the width of the space taken by the tooltip button and the separator
+    if (ImGui::IsItemHovered()) {
+        ImGui::BeginTooltip2(ImVec2(x, y));
+        auto draw_text_with_caption = [&imgui, & caption_max](const wxString &caption, const wxString &text) {
+            imgui->text_colored(ImGuiWrapper::COL_ACTIVE, caption);
+            ImGui::SameLine(caption_max);
+            imgui->text_colored(ImGuiWrapper::COL_WINDOW_BG, text);
+        };
+
+        for (const auto &t : std::array<std::string, 3>{"object_selection", "part_selection", "number_key"}) {
+            draw_text_with_caption(m_assembly_view_desc.at(t + "_caption") + ": ", m_assembly_view_desc.at(t));
+        }
+        ImGui::EndTooltip();
+    }
+    ImGui::PopStyleVar(2);
+    auto same_line_size = button_size.x * 1.8;//with an space size
+    ImGui::SameLine(same_line_size);
+    same_line_size = imgui->calc_text_size("|"sv).x + same_line_size + imgui->calc_text_size("  "sv).x;
+    imgui->text_colored(ImGuiWrapper::COL_ACTIVE, "|");
+    ImGui::SameLine(same_line_size);
+    return same_line_size;
 }
 
 //BBS
@@ -8943,11 +8985,19 @@ void GLCanvas3D::_render_assemble_control()
     imgui->begin(_L("Assemble Control"), ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
     ImGui::AlignTextToFramePadding();
-    float tooltip_button_width;
+    float tip_icon_size;
     {
-        tooltip_button_width = _render_assembly_tooltip_button(imgui);
+        float caption_max = 0.f;
+        for (const auto &t : std::array<std::string, 3>{"object_selection", "part_selection", "number_key"}) {
+            caption_max = std::max(caption_max, imgui->calc_text_size(m_assembly_view_desc.at(t + "_caption")).x);
+        }
+        const ImVec2 pos = ImGui::GetCursorScreenPos();
+        const float text_y = imgui->calc_text_size(_L("Part selection")).y;
+        float get_cur_x = pos.x;
+        float get_cur_y = pos.y - ImGui::GetFrameHeight() - 4 * text_y;
+        tip_icon_size =_show_assembly_tooltip_information(caption_max, get_cur_x, get_cur_y);
     }
-    float same_line_width = tooltip_button_width;
+    float same_line_width = tip_icon_size;
     {
         float clp_dist = m_gizmos.m_assemble_view_data->model_objects_clipper()->get_position();
         if (clp_dist == 0.f) {
@@ -9500,7 +9550,6 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
     std::string text;
     ErrorType error = ErrorType::PLATER_WARNING;
     const ModelObject* conflictObj=nullptr;
-    const ModelInstance* conflictInst=nullptr;
     switch (warning) {
     case EWarning::GCodeConflict: {
         static std::string prevConflictText;
@@ -9511,17 +9560,12 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
         std::string objName2 = m_gcode_viewer.m_conflict_result.value()._objName2;
         double      height   = m_gcode_viewer.m_conflict_result.value()._height;
         int         layer    = m_gcode_viewer.m_conflict_result.value().layer;
-        const PrintInstance *inst2 = reinterpret_cast<const PrintInstance *>(m_gcode_viewer.m_conflict_result.value()._obj2);
-
         text = (boost::format(_u8L("Conflicts of G-code paths have been found at layer %d, Z = %.2lfmm. Please separate the conflicted objects farther (%s <-> %s).")) % layer %
                 height % objName1 % objName2)
                    .str();
         prevConflictText        = text;
-        
-        if (inst2) {
-            if (inst2->model_instance) conflictInst = inst2->model_instance;
-            else if (inst2->print_object) conflictObj = inst2->print_object->model_object();
-        }
+        const PrintObject *obj2 = reinterpret_cast<const PrintObject *>(m_gcode_viewer.m_conflict_result.value()._obj2);
+        conflictObj             = obj2->model_object();
         break;
     }
     case EWarning::ObjectOutside:      text = _u8L("An object is laid over the plate boundaries."); break;
@@ -9547,14 +9591,15 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
             if (error_iter != m_gcode_viewer.m_gcode_check_result.print_area_error_infos.begin()) {
                 text += "\n";
             }
-            int extruder_id = error_iter->first + 1; // change extruder id to 1 based
+            int extruder_index = error_iter->first;
+            int extruder_id    = filament_index_from_zero_based(extruder_index);
             std::string filaments;
             std::vector<int> slice_error_object_idxs;
             for (size_t i = 0; i < error_iter->second.size(); ++i) {
                 if (i > 0) {
                     filaments += ", ";
                 }
-                int filament_id = error_iter->second[i].first + 1; // change filament id to 1 based
+                int filament_id = filament_index_from_zero_based(error_iter->second[i].first);
                 int object_label_id = error_iter->second[i].second;
 
                 filaments += std::to_string(filament_id);
@@ -9578,11 +9623,10 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
                 }
             }
             std::string extruder_name;
-            if(wxGetApp().preset_bundle->is_bbl_vendor()){
-                extruder_name = extruder_name_list[extruder_id-1];
-            }
-            else{
-                extruder_name += (boost::format(_u8L("Tool %d"))%extruder_id).str();
+            if (wxGetApp().preset_bundle->is_bbl_vendor()) {
+                extruder_name = extruder_name_list[extruder_index];
+            } else {
+                extruder_name += (boost::format(_u8L("Tool %d")) % extruder_id).str();
             }
 
             if (error_iter->second.size() == 1) {
@@ -9600,11 +9644,12 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
             if (error_iter != m_gcode_viewer.m_gcode_check_result.print_height_error_infos.begin()) {
                 text += "\n";
             }
-            int              extruder_id = error_iter->first + 1; // change extruder id to 1 based
+            int        extruder_index = error_iter->first;
+            int        extruder_id = filament_index_from_zero_based(extruder_index);
             std::set<int>    filament_ids;
             std::vector<int> slice_error_object_idxs;
             for (size_t i = 0; i < error_iter->second.size(); ++i) {
-                int filament_id     = error_iter->second[i].first + 1; // change filament id to 1 based
+                int filament_id     = filament_index_from_zero_based(error_iter->second[i].first);
                 int object_label_id = error_iter->second[i].second;
                 filament_ids.insert(filament_id);
                 for (int object_idx = 0; object_idx < (int) m_model->objects.size(); ++object_idx) {
@@ -9637,7 +9682,7 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
                     }
                 }
             }
-            std::string extruder_name = extruder_name_list[extruder_id-1];
+            std::string extruder_name = extruder_name_list[extruder_index];
             if (error_iter->second.size() == 1) {
                 text += (boost::format(_u8L("Filament %s is placed in the %s, but the generated G-code path exceeds the printable height of the %s.")) % filaments % extruder_name % extruder_name).str();
             } else {
@@ -9663,10 +9708,10 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
         break;
     case EWarning::FilamentUnPrintableOnFirstLayer: {
         std::string             warning;
-        const std::vector<int> &conflict_filament = m_gcode_viewer.filament_printable_reuslt.conflict_filament;
+        std::vector<int> &conflict_filament = m_gcode_viewer.filament_printable_reuslt.conflict_filament;
         auto                    iter              = conflict_filament.begin();
         for (int filament : conflict_filament) {
-            warning += std::to_string(filament + 1);
+            warning += std::to_string(filament_index_from_zero_based(filament));
             warning += " ";
         }
         text  = (boost::format(_u8L("Filaments %s cannot be printed directly on the surface of this plate.")) % warning).str();
@@ -9769,13 +9814,8 @@ void GLCanvas3D::_set_warning_notification(EWarning warning, bool state)
         }
         break;
     case SLICING_SERIOUS_WARNING:
-        if (state) {
-            if (conflictInst) {
-                notification_manager.push_slicing_serious_warning_notification(text, std::vector<ModelInstance const*>{conflictInst});
-            } else {
-                notification_manager.push_slicing_serious_warning_notification(text, conflictObj ? std::vector<ModelObject const*>{conflictObj} : std::vector<ModelObject const*>{});
-            }
-        }
+        if (state)
+            notification_manager.push_slicing_serious_warning_notification(text, conflictObj ? std::vector<ModelObject const*>{conflictObj} : std::vector<ModelObject const*>{});
         else
             notification_manager.close_slicing_serious_warning_notification(text);
         break;

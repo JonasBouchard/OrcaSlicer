@@ -77,10 +77,6 @@ static std::string get_view_type_string(libvgcode::EViewType view_type)
         return _u8L("Speed");
     else if (view_type == libvgcode::EViewType::ActualSpeed)
         return _u8L("Actual Speed");
-    else if (view_type == libvgcode::EViewType::Acceleration)
-        return _u8L("Acceleration");
-    else if (view_type == libvgcode::EViewType::Jerk)
-        return _u8L("Jerk");
     else if (view_type == libvgcode::EViewType::FanSpeed)
         return _u8L("Fan Speed");
     else if (view_type == libvgcode::EViewType::Temperature)
@@ -387,16 +383,6 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     const std::string text = std::string(buff);
                     ImGuiWrapper::text(text);
                 });
-                append_table_row(_u8L("Acceleration"), [&vertex, &buff]() {
-                    sprintf(buff, ("%.0f " + _u8L("mm/s²")).c_str(), vertex.acceleration);
-                    const std::string text = std::string(buff);
-                    ImGuiWrapper::text(text);
-                });
-                append_table_row(_u8L("Jerk"), [&vertex, &buff]() {
-                    sprintf(buff, ("%.1f " + _u8L("mm/s")).c_str(), vertex.jerk);
-                    const std::string text = std::string(buff);
-                    ImGuiWrapper::text(text);
-                });
                   append_table_row(_u8L("Flow rate"), [&vertex, &buff, NA_TXT]() { // ORCA use "Flow rate" instead "Volumetric flow Rate" to make window more compact
                     std::string text;
                     if (vertex.is_extrusion()) {
@@ -516,15 +502,13 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
         }
 
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding  , 3.f * m_scale);
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding   , ImVec2(2.f, 2.f) * m_scale);
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(.5f, .5f));
         ImGui::PushStyleColor(ImGuiCol_Button            , ImVec4(0, 0, 0, 0));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered     , ImVec4(84 / 255.f, 84 / 255.f, 90 / 255.f, 1.f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive      , ImVec4(84 / 255.f, 84 / 255.f, 90 / 255.f, 1.f));
          
         const float main_wnd_height = ImGui::GetWindowHeight();
-        // ORCA use glyph based button for fixing button sizes changing depends on used font size on platform
-        const wchar_t foldIcon = properties_shown ? ImGui::UnfoldButtonIcon : ImGui::FoldButtonIcon;
-        if (imgui.glyph_button(foldIcon, ImVec2(16.f, 16.f) * m_scale)) {
+        if (ImGui::Button(into_u8(properties_shown ? ImGui::UnfoldButtonIcon : ImGui::FoldButtonIcon).c_str(), ImVec2(24.f, 24.f) * m_scale)) {
             properties_shown = !properties_shown;
             static float main_wnd_height_temp = ImGui::GetWindowHeight();
             static float first_click = true;
@@ -539,8 +523,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
 
         ImGui::SameLine();
 
-        if(!properties_shown)
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetStyle().FramePadding.y); // aligns button with next group
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetStyle().FramePadding.y); // aligns button with next group
 
         ImGui::BeginGroup(); // group contents to make information area more compact
 
@@ -632,14 +615,6 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                 }
                 case libvgcode::EViewType::ActualSpeed: {
                     sprintf(buf, "%s %s%.1f", buf, _u8L("Actual Speed: ").c_str(), vertex.actual_feedrate);
-                    break;
-                }
-                case libvgcode::EViewType::Acceleration: {
-                    sprintf(buf, "%s %s%.0f", buf, _u8L("Acceleration: ").c_str(), vertex.acceleration);
-                    break;
-                }
-                case libvgcode::EViewType::Jerk: {
-                    sprintf(buf, "%s %s%.1f", buf, _u8L("Jerk: ").c_str(), vertex.jerk);
                     break;
                 }
 // ORCA: Add Pressure Advance visualization support
@@ -1056,8 +1031,6 @@ void GCodeViewer::update_by_mode(ConfigOptionMode mode)
     view_type_items.push_back(libvgcode::EViewType::ColorPrint);
     view_type_items.push_back(libvgcode::EViewType::Speed);
     view_type_items.push_back(libvgcode::EViewType::ActualSpeed);
-    view_type_items.push_back(libvgcode::EViewType::Acceleration);
-    view_type_items.push_back(libvgcode::EViewType::Jerk);
     view_type_items.push_back(libvgcode::EViewType::Height);
     view_type_items.push_back(libvgcode::EViewType::Width);
     view_type_items.push_back(libvgcode::EViewType::VolumetricFlowRate);
@@ -2314,8 +2287,6 @@ void GCodeViewer::render_toolpaths()
             add_range_property_row("height range", m_viewer.get_color_range(libvgcode::EViewType::Height).get_range());
             add_range_property_row("width range", m_viewer.get_color_range(libvgcode::EViewType::Width).get_range());
             add_range_property_row("speed range", m_viewer.get_color_range(libvgcode::EViewType::Speed).get_range());
-            add_range_property_row("acceleration range", m_viewer.get_color_range(libvgcode::EViewType::Acceleration).get_range());
-            add_range_property_row("jerk range", m_viewer.get_color_range(libvgcode::EViewType::Jerk).get_range());
             add_range_property_row("fan speed range", m_viewer.get_color_range(libvgcode::EViewType::FanSpeed).get_range());
             add_range_property_row("temperature range", m_viewer.get_color_range(libvgcode::EViewType::Temperature).get_range());
 // ORCA: Add Pressure Advance visualization support
@@ -2674,7 +2645,7 @@ void GCodeViewer::render_all_plates_stats(const std::vector<const GCodeProcessor
         for (auto it = model_volume_of_extruders_all_plates.begin(); it != model_volume_of_extruders_all_plates.end(); it++) {
             if (i < model_used_filaments_m_all_plates.size() && i < model_used_filaments_g_all_plates.size()) {
                 std::vector<std::pair<std::string, float>> columns_offsets;
-                columns_offsets.push_back({ std::to_string(it->first + 1), offsets[_u8L("Filament")]});
+                columns_offsets.push_back({ std::to_string(filament_index_from_zero_based(static_cast<int>(it->first))), offsets[_u8L("Filament")]});
 
                 char buf[64];
                 double unit_conver = imperial_units ? GizmoObjectManipulation::oz_to_g : 1.0;
@@ -3330,26 +3301,29 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
     ImGui::Dummy({ window_padding, window_padding });
     ImGui::Dummy({ window_padding, window_padding });
     ImGui::SameLine(window_padding * 2); // ORCA Ignores item spacing to get perfect window margins since since this part uses dummies for window padding
-
+    std::wstring btn_name;
+    if (m_fold)
+        btn_name = ImGui::UnfoldButtonIcon;
+    else
+        btn_name = ImGui::FoldButtonIcon;
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(84 / 255.f, 84 / 255.f, 90 / 255.f, 1.f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(84 / 255.f, 84 / 255.f, 90 / 255.f, 1.f));
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding , ImVec2(2.f, 2.f) * m_scale);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f * m_scale); // ORCA Match button style with combo box
+    float calc_padding = (ImGui::GetFrameHeight() - 16 * m_scale) / 2;                      // ORCA calculated padding for 16x16 icon
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(calc_padding, calc_padding));    // ORCA Center icon with frame padding
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f * m_scale);                       // ORCA Match button style with combo box
 
-    // ORCA use glyph based button for fixing button sizes changing depends on used font size on platform
-    const wchar_t foldIcon = m_fold ? ImGui::UnfoldButtonIcon : ImGui::FoldButtonIcon;
-    if (imgui.glyph_button(foldIcon, ImVec2(16.f, 16.f) * m_scale)) {
+    float button_width = 16 * m_scale + calc_padding * 2;                                   // ORCA match buttons height with combo box
+    if (ImGui::Button(into_u8(btn_name).c_str(), ImVec2(button_width, button_width))) {
         m_fold = !m_fold;
     }
 
     ImGui::SameLine();
     const wchar_t gCodeToggle = ImGui::gCodeButtonIcon;
-    if (imgui.glyph_button(gCodeToggle, ImVec2(16.f, 16.f) * m_scale)) {
+    if (ImGui::Button(into_u8(gCodeToggle).c_str(), ImVec2(button_width, button_width))) {
         wxGetApp().toggle_show_gcode_window();
         wxGetApp().plater()->get_current_canvas3D()->post_event(SimpleEvent(wxEVT_PAINT));
     }
-
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar(2);
 
@@ -3562,16 +3536,6 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         imgui.title(_u8L("Actual Speed (mm/s)"));
         break;
     }
-    case libvgcode::EViewType::Acceleration:
-    {
-        imgui.title(_u8L("Acceleration (mm/s²)"));
-        break;
-    }
-    case libvgcode::EViewType::Jerk:
-    {
-        imgui.title(_u8L("Jerk (mm/s)"));
-        break;
-    }
     case libvgcode::EViewType::FanSpeed:       { imgui.title(_u8L("Fan Speed (%)")); break; }
     case libvgcode::EViewType::Temperature:    { imgui.title(_u8L("Temperature (°C)")); break; }
 // ORCA: Add Pressure Advance visualization support
@@ -3750,38 +3714,6 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         ImGui::PopStyleVar(1);
         break;
     }
-    case libvgcode::EViewType::Acceleration: {
-        append_range(m_viewer.get_color_range(libvgcode::EViewType::Acceleration), 0);
-        ImGui::Spacing();
-        ImGui::Dummy({ window_padding, window_padding });
-        ImGui::SameLine();
-        offsets = calculate_offsets({ { _u8L("Options"), { _u8L("Travel")}}, { _u8L("Display"), {""}} }, icon_size);
-        append_headers({ {_u8L("Options"), offsets[0] }, { _u8L("Display"), offsets[1]} });
-        const bool travel_visible = m_viewer.is_option_visible(libvgcode::EOptionType::Travels);
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 3.0f));
-        append_item(EItemType::None, libvgcode::convert(m_viewer.get_option_color(libvgcode::EOptionType::Travels)), { {_u8L("Travel"), offsets[0] }}, true, predictable_icon_pos/*ORCA checkbox_pos*/, travel_visible, [this, travel_visible]() {
-            m_viewer.toggle_option_visibility(libvgcode::EOptionType::Travels);
-            update_moves_slider();
-            });
-        ImGui::PopStyleVar(1);
-        break;
-    }
-    case libvgcode::EViewType::Jerk: {
-        append_range(m_viewer.get_color_range(libvgcode::EViewType::Jerk), 1);
-        ImGui::Spacing();
-        ImGui::Dummy({ window_padding, window_padding });
-        ImGui::SameLine();
-        offsets = calculate_offsets({ { _u8L("Options"), { _u8L("Travel")}}, { _u8L("Display"), {""}} }, icon_size);
-        append_headers({ {_u8L("Options"), offsets[0] }, { _u8L("Display"), offsets[1]} });
-        const bool travel_visible = m_viewer.is_option_visible(libvgcode::EOptionType::Travels);
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 3.0f));
-        append_item(EItemType::None, libvgcode::convert(m_viewer.get_option_color(libvgcode::EOptionType::Travels)), { {_u8L("Travel"), offsets[0] }}, true, predictable_icon_pos/*ORCA checkbox_pos*/, travel_visible, [this, travel_visible]() {
-            m_viewer.toggle_option_visibility(libvgcode::EOptionType::Travels);
-            update_moves_slider();
-            });
-        ImGui::PopStyleVar(1);
-        break;
-    }
     case libvgcode::EViewType::FanSpeed:                 { append_range(m_viewer.get_color_range(libvgcode::EViewType::FanSpeed), 0); break; }
     case libvgcode::EViewType::Temperature:              { append_range(m_viewer.get_color_range(libvgcode::EViewType::Temperature), 0); break; }
 // ORCA: Add Pressure Advance visualization support
@@ -3798,7 +3730,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
         for (uint8_t extruder_id : used_extruders_ids) {
             ::sprintf(buf, imperial_units ? "%.2f in    %.2f g" : "%.2f m    %.2f g", model_used_filaments_m[i], model_used_filaments_g[i]);
-            append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), { { _u8L("Extruder") + " " + std::to_string(extruder_id + 1), offsets[0]}, {buf, offsets[1]} });
+            append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), { { _u8L("Extruder") + " " + std::to_string(filament_index_from_zero_based(extruder_id)), offsets[0]}, {buf, offsets[1]} });
             // append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), _u8L("Extruder") + " " + std::to_string(extruder_id + 1),
             // true, "", 0.0f, 0.0f, offsets, used_filaments_m[extruder_id], used_filaments_g[extruder_id]);
             i++;
@@ -3850,7 +3782,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         for (auto extruder_idx : used_extruders_ids) {
             if (i < model_used_filaments_m.size() && i < model_used_filaments_g.size()) {
                 std::vector<std::pair<std::string, float>> columns_offsets;
-                columns_offsets.push_back({ std::to_string(extruder_idx + 1), color_print_offsets[_u8L("Filament")]});
+                columns_offsets.push_back({ std::to_string(filament_index_from_zero_based(extruder_idx)), color_print_offsets[_u8L("Filament")]});
 
                 char buf[64];
                 float column_sum_m = 0.0f;
@@ -3941,14 +3873,6 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         imgui.text(_u8L("Filament change times") + ":");
         ImGui::SameLine();
         ::sprintf(buf, "%d", m_print_statistics.total_filament_changes);
-        imgui.text(buf);
-
-        //display tool change times
-        ImGui::Dummy({window_padding, window_padding});
-        ImGui::SameLine();
-        imgui.text(_u8L("Tool changes") + ":");
-        ImGui::SameLine();
-        ::sprintf(buf, "%d", m_print_statistics.total_extruder_changes);
         imgui.text(buf);
 
         //BBS display cost
@@ -4146,8 +4070,6 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         {
         case libvgcode::EViewType::Speed:
         case libvgcode::EViewType::ActualSpeed:
-        case libvgcode::EViewType::Acceleration:
-        case libvgcode::EViewType::Jerk:
         case libvgcode::EViewType::Tool:
         case libvgcode::EViewType::ColorPrint: {
             break;
@@ -4236,7 +4158,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
                 ret = std::max(ret, ImGui::CalcTextSize((_u8L("Print settings") + std::string(":")).c_str()).x);
             if (!m_settings_ids.filament.empty()) {
                 for (unsigned char i : m_viewer.get_used_extruders_ids()) {
-                    ret = std::max(ret, ImGui::CalcTextSize((_u8L("Filament") + " " + std::to_string(i + 1) + ":").c_str()).x);
+                    ret = std::max(ret, ImGui::CalcTextSize((_u8L("Filament") + " " + std::to_string(filament_index_from_zero_based(static_cast<int>(i))) + ":").c_str()).x);
                 }
             }
             if (ret > 0.0f)
@@ -4263,7 +4185,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
             for (unsigned char i : m_viewer.get_used_extruders_ids()) {
                 if (i < static_cast<unsigned char>(m_settings_ids.filament.size()) && !m_settings_ids.filament[i].empty()) {
                     std::string txt = _u8L("Filament");
-                    txt += (m_viewer.get_used_extruders_count() == 1) ? ":" : " " + std::to_string(i + 1);
+                    txt += (m_viewer.get_used_extruders_count() == 1) ? ":" : " " + std::to_string(filament_index_from_zero_based(static_cast<int>(i)));
                     imgui.text(txt);
                     ImGui::SameLine(offset);
                     imgui.text(m_settings_ids.filament[i]);

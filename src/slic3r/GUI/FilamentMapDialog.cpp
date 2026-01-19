@@ -2,7 +2,6 @@
 #include "PartPlate.hpp"
 #include "Widgets/Button.hpp"
 #include "Widgets/DialogButtons.hpp"
-#include "Widgets/Label.hpp"
 #include "I18N.hpp"
 #include "GUI_App.hpp"
 #include "CapsuleButton.hpp"

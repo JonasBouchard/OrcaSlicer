@@ -6,7 +6,7 @@
 	"machine_tech": "FFF",
 	"family": "Blocks",
 	"bed_model": "RF50 HotBed model.stl",
-	"bed_texture": "RF50 HotBed texture.svg",
+	"bed_texture": "RF50 HotBed texture.png",
 	"hotend_model": "BLOCKS PrintCore.stl",
 	"default_materials": "Blocks Generic PLA;Blocks Generic PETG;Blocks Generic TPU"
 }

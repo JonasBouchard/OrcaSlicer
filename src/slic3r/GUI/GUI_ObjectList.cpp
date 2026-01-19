@@ -2,6 +2,7 @@
 #include "libslic3r/PresetBundle.hpp"
 #include "GUI_ObjectList.hpp"
 #include "GUI_Factories.hpp"
+#include "GUI.hpp"
 //#include "GUI_ObjectLayers.hpp"
 #include "GUI_App.hpp"
 #include "I18N.hpp"
@@ -29,14 +30,13 @@
 #include <unordered_map>
 #include <functional>
 #include <boost/algorithm/string.hpp>
-#include <boost/log/trivial.hpp>
 #include <wx/progdlg.h>
 #include <wx/listbook.h>
 #include <wx/numformatter.h>
 #include <wx/utils.h>
 #include <wx/headerctrl.h>
 
-#include "slic3r/Utils/FixModelByCgal.hpp"
+#include "slic3r/Utils/FixModelByWin10.hpp"
 #include "libslic3r/Format/bbs_3mf.hpp"
 #include "libslic3r/PrintConfig.hpp"
 
@@ -460,15 +460,6 @@ void ObjectList::create_objects_ctrl()
     AppendBitmapColumn(" ", colEditing, wxOSX ? wxDATAVIEW_CELL_EDITABLE : wxDATAVIEW_CELL_INERT, m_columns_width[colEditing] * em,
         wxALIGN_CENTER_HORIZONTAL, 0);
 
-
-    // Open filament editor faster
-    this->Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED, [this](wxDataViewEvent& event) {
-        if (event.GetColumn() == colFilament) {
-            // Trigger the editor opening manually
-            this->EditItem(event.GetItem(), GetColumn(colFilament));
-        }
-    });
-
     //for (int cn = colName; cn < colCount; cn++) {
     //    GetColumn(cn)->SetResizeable(cn == colName);
     //}
@@ -578,7 +569,7 @@ MeshErrorsInfo ObjectList::get_mesh_errors_info(const int obj_idx, const int vol
     if (non_manifold_edges)
         *non_manifold_edges = stats.open_edges;
 
-    if (!sidebar_info)
+    if (is_windows10() && !sidebar_info)
         tooltip += "\n" + _L("Click the icon to repair model object");
 
     return { tooltip, get_warning_icon_name(stats) };
@@ -700,11 +691,11 @@ void ObjectList::update_filament_values_for_items(const size_t filaments_count)
         auto object = (*m_objects)[i];
         wxString extruder;
         if (!object->config.has("extruder") || size_t(object->config.extruder()) > filaments_count) {
-            extruder = "1";
+            extruder = format_filament_index_for_display(1);
             object->config.set_key_value("extruder", new ConfigOptionInt(1));
         }
         else {
-            extruder = wxString::Format("%d", object->config.extruder());
+            extruder = format_filament_index_for_display(object->config.extruder());
         }
         m_objects_model->SetExtruder(extruder, item);
 
@@ -719,10 +710,10 @@ void ObjectList::update_filament_values_for_items(const size_t filaments_count)
                 if (!item) continue;
                 if (!object->volumes[id]->config.has("extruder") ||
                     size_t(object->volumes[id]->config.extruder()) > filaments_count) {
-                    extruder = wxString::Format("%d", object->config.extruder());
+                    extruder = format_filament_index_for_display(object->config.extruder());
                 }
                 else {
-                    extruder = wxString::Format("%d", object->volumes[id]->config.extruder());
+                    extruder = format_filament_index_for_display(object->volumes[id]->config.extruder());
                 }
 
                 m_objects_model->SetExtruder(extruder, item);
@@ -749,15 +740,15 @@ void ObjectList::update_filament_values_for_items_when_delete_filament(const siz
         auto     object = (*m_objects)[i];
         wxString extruder;
         if (!object->config.has("extruder")) {
-            extruder = std::to_string(1);
+            extruder = format_filament_index_for_display(1);
             object->config.set_key_value("extruder", new ConfigOptionInt(1));
         }
         else if (size_t(object->config.extruder()) == filament_id + 1) {
-            extruder = std::to_string(replace_filament_id);
+            extruder = format_filament_index_for_display(replace_filament_id);
             object->config.set_key_value("extruder", new ConfigOptionInt(replace_filament_id));
         } else {
             int new_extruder = object->config.extruder() > filament_id ? object->config.extruder() - 1 : object->config.extruder();
-            extruder = wxString::Format("%d", new_extruder);
+            extruder = format_filament_index_for_display(new_extruder);
             object->config.set_key_value("extruder", new ConfigOptionInt(new_extruder));
         }
         m_objects_model->SetExtruder(extruder, item);
@@ -799,7 +790,7 @@ void ObjectList::update_filament_values_for_items_when_delete_filament(const siz
                     object->volumes[id]->config.set_key_value("extruder", new ConfigOptionInt(replace_filament_id));
                 } else {
                     int new_extruder = object->volumes[id]->config.extruder() > filament_id ? object->volumes[id]->config.extruder() - 1 : object->volumes[id]->config.extruder();
-                    extruder = wxString::Format("%d", new_extruder);
+                    extruder = format_filament_index_for_display(new_extruder);
                     object->volumes[id]->config.set_key_value("extruder", new ConfigOptionInt(new_extruder));
                 }
 
@@ -827,12 +818,12 @@ void ObjectList::update_filament_values_for_items_when_delete_filament(const siz
                     auto& layer_range_item = *(l_iter);
                     if (layer_range_item.second.has("extruder") && layer_range_item.second.option("extruder")->getInt() == filament_id + 1) {
                         int new_extruder = replace_id == -1 ? 0 : (replace_id + 1);
-                        extruder         = wxString::Format("%d", new_extruder);
+                        extruder         = format_filament_index_for_display(new_extruder);
                         layer_range_item.second.set("extruder", new_extruder);
                     } else {
                         int layer_filament_id = layer_range_item.second.option("extruder")->getInt();
                         int new_extruder      = layer_filament_id > filament_id ? layer_filament_id - 1 : layer_filament_id;
-                        extruder              = wxString::Format("%d", new_extruder);
+                        extruder              = format_filament_index_for_display(new_extruder);
                         layer_range_item.second.set("extruder", new_extruder);
                     }
                     m_objects_model->SetExtruder(extruder, layer_item);
@@ -1105,7 +1096,7 @@ void ObjectList::update_filament_in_config(const wxDataViewItem& item)
 
     take_snapshot("Change Filament");
 
-    const int extruder = m_objects_model->GetExtruderNumber(item);
+    const int extruder = filament_index_to_one_based(m_objects_model->GetExtruderNumber(item));
     m_config->set_key_value("extruder", new ConfigOptionInt(extruder));
 
     // BBS
@@ -1550,9 +1541,9 @@ void ObjectList::list_manipulation(const wxPoint& mouse_pos, bool evt_context_me
         }
         else if (col_num == colName)
         {
-            if (m_objects_model->HasWarningIcon(item) &&
+            if (is_windows10() && m_objects_model->HasWarningIcon(item) &&
                 mouse_pos.x > 2 * wxGetApp().em_unit() && mouse_pos.x < 4 * wxGetApp().em_unit())
-                fix_through_cgal();
+                fix_through_netfabb();
             else if (evt_context_menu)
                 show_context_menu(evt_context_menu); // show context menu for "Name" column too
         }
@@ -1634,7 +1625,7 @@ void ObjectList::extruder_editing()
     pos.x = GetColumn(colName)->GetWidth() + GetColumn(colPrint)->GetWidth() + GetColumn(colHeight)->GetWidth() + 5;
     pos.y -= GetTextExtent("m").y;
 
-    apply_extruder_selector(&m_extruder_editor, this, "1", pos, size);
+    apply_extruder_selector(&m_extruder_editor, this, format_filament_index_for_display(1).ToStdString(), pos, size);
 
     m_extruder_editor->SetSelection(m_objects_model->GetExtruderNumber(item));
     m_extruder_editor->Show();
@@ -2800,7 +2791,7 @@ bool ObjectList::del_subobject_from_object(const int obj_idx, const int idx, con
                         int extruder_id = last_volume->config.opt_int("extruder");
                         object->config.set("extruder", extruder_id);
                     }
-                    wxString extruder = object->config.has("extruder") ? wxString::Format("%d", object->config.extruder()) : _devL("1");
+                    wxString extruder = object->config.has("extruder") ? format_filament_index_for_display(object->config.extruder()) : format_filament_index_for_display(1);
                     m_objects_model->SetExtruder(extruder, obj_item);
                 }
                 // add settings to the object, if it has them
@@ -4213,7 +4204,7 @@ void ObjectList::delete_from_model_and_list(const std::vector<ItemForDelete>& it
                 if (obj->volumes.size() == 1) {
                     wxDataViewItem parent = m_objects_model->GetItemById(item->obj_idx);
                     if (obj->config.has("extruder")) {
-                        const wxString extruder = wxString::Format("%d", obj->config.extruder());
+                        const wxString extruder = format_filament_index_for_display(obj->config.extruder());
                         m_objects_model->SetExtruder(extruder, parent);
                     }
                     // If last volume item with warning was deleted, unmark object item
@@ -5387,11 +5378,6 @@ ModelVolume* ObjectList::get_selected_model_volume()
     return (*m_objects)[obj_idx]->volumes[vol_idx];
 }
 
-// ORCA: kept as dead code (not called by any active path). Preserved in #if 0
-// form for traceability with upstream Bambu Studio -- removing outright would
-// produce merge conflicts on every BBL sync. The active "Change Type" UI goes
-// through the submenu in GUI_Factories.cpp -> ObjectList::set_volume_type().
-#if 0
 void ObjectList::change_part_type()
 {
   wxDataViewItemArray selections;
@@ -5588,7 +5574,6 @@ void ObjectList::change_part_type()
 
   return;
 }
-#endif
 
 ModelVolumeType ObjectList::get_selected_volume_type()
 {
@@ -5660,26 +5645,6 @@ void ObjectList::set_volume_type(ModelVolumeType new_type)
         }
         if (volumes.empty())
             return;
-    }
-
-    // Defense-in-depth safety net against issue #5070: SVG/text volumes carry emboss metadata
-    // (text_configuration, emboss_shape) that only makes sense for Part / Negative Part / Modifier.
-    // ModelVolume::set_type() does not clear that metadata, so converting such volumes to
-    // Support Blocker / Support Enforcer leaves stale emboss state attached to a support volume
-    // and historically crashed (originally fixed in the now-disabled change_part_type() by hiding
-    // Support entries in the old choice dialog; the UI-side guard for the current submenu lives
-    // in MenuFactory::append_menu_item_change_type, see #13120).
-    // This block must never be reachable under a healthy UI; if it ever logs, the UI guard has
-    // been bypassed (new entry point, refactor, plugin, etc.) and should be investigated.
-    if (new_type == ModelVolumeType::SUPPORT_BLOCKER || new_type == ModelVolumeType::SUPPORT_ENFORCER) {
-        const bool has_text_or_svg = std::any_of(volumes.begin(), volumes.end(),
-            [](const VolumeSelection& sel) { return sel.volume->is_svg() || sel.volume->is_text(); });
-        if (has_text_or_svg) {
-            BOOST_LOG_TRIVIAL(error) << __FUNCTION__
-                << ": blocked attempt to set SUPPORT_BLOCKER/ENFORCER on SVG/text volume; "
-                << "UI guard should have prevented this -- possible regression in the Change Type menu";
-            return;
-        }
     }
 
     const bool any_diff = std::any_of(volumes.begin(), volumes.end(),
@@ -5984,7 +5949,7 @@ void ObjectList::rename_item()
         update_name_in_model(item);
 }
 
-void ObjectList::fix_through_cgal()
+void ObjectList::fix_through_netfabb()
 {
     // Do not fix anything when a gizmo is open. There might be issues with updates
     // and what is worse, the snapshot time would refer to the internal stack.
@@ -6004,11 +5969,11 @@ void ObjectList::fix_through_cgal()
     // clear selections from the non-broken models if any exists
     // and than fill names of models to repairing
     if (vol_idxs.empty()) {
-#if !FIX_THROUGH_CGAL_ALWAYS
+#if !FIX_THROUGH_NETFABB_ALWAYS
         for (int i = int(obj_idxs.size())-1; i >= 0; --i)
                 if (object(obj_idxs[i])->get_repaired_errors_count() == 0)
                     obj_idxs.erase(obj_idxs.begin()+i);
-#endif // FIX_THROUGH_CGAL_ALWAYS
+#endif // FIX_THROUGH_NETFABB_ALWAYS
         for (int obj_idx : obj_idxs)
             if (object(obj_idx))
                 model_names.push_back(object(obj_idx)->name);
@@ -6016,11 +5981,11 @@ void ObjectList::fix_through_cgal()
     else {
         ModelObject* obj = object(obj_idxs.front());
         if (obj) {
-#if !FIX_THROUGH_CGAL_ALWAYS
+#if !FIX_THROUGH_NETFABB_ALWAYS
             for (int i = int(vol_idxs.size()) - 1; i >= 0; --i)
                 if (obj->get_repaired_errors_count(vol_idxs[i]) == 0)
                     vol_idxs.erase(vol_idxs.begin() + i);
-#endif // FIX_THROUGH_CGAL_ALWAYS
+#endif // FIX_THROUGH_NETFABB_ALWAYS
             for (int vol_idx : vol_idxs)
                 model_names.push_back(obj->volumes[vol_idx]->name);
         }
@@ -6049,17 +6014,12 @@ void ObjectList::fix_through_cgal()
         }
 
         plater->clear_before_change_mesh(obj_idx);
-        const size_t volumes_before = object(obj_idx)->volumes.size();
         std::string res;
-        if (!fix_model_with_cgal_gui(*(object(obj_idx)), vol_idx, progress_dlg, msg, res))
+        if (!fix_model_by_win10_sdk_gui(*(object(obj_idx)), vol_idx, progress_dlg, msg, res))
             return false;
         //wxGetApp().plater()->changed_mesh(obj_idx);
         object(obj_idx)->ensure_on_bed();
         plater->changed_mesh(obj_idx);
-
-        const size_t volumes_after = object(obj_idx)->volumes.size();
-        if (volumes_after != volumes_before)
-            add_volumes_to_object_in_list(obj_idx);
 
         plater->get_partplate_list().notify_instance_update(obj_idx, 0);
         plater->sidebar().obj_list()->update_plate_values_for_items();
@@ -6084,10 +6044,10 @@ void ObjectList::fix_through_cgal()
     if (vol_idxs.empty()) {
         int vol_idx{ -1 };
         for (int obj_idx : obj_idxs) {
-#if !FIX_THROUGH_CGAL_ALWAYS
+#if !FIX_THROUGH_NETFABB_ALWAYS
             if (object(obj_idx)->get_repaired_errors_count(vol_idx) == 0)
                 continue;
-#endif // FIX_THROUGH_CGAL_ALWAYS
+#endif // FIX_THROUGH_NETFABB_ALWAYS
             if (!fix_and_update_progress(obj_idx, vol_idx, model_idx, progress_dlg, succes_models, failed_models))
                 break;
             model_idx++;
@@ -6120,7 +6080,7 @@ void ObjectList::fix_through_cgal()
     }
     if (msg.IsEmpty())
         msg = _L("Repairing was canceled");
-    plater->get_notification_manager()->push_notification(NotificationType::CgalFinished, NotificationManager::NotificationLevel::PrintInfoShortNotificationLevel, into_u8(msg));
+    plater->get_notification_manager()->push_notification(NotificationType::NetfabbFinished, NotificationManager::NotificationLevel::PrintInfoShortNotificationLevel, into_u8(msg));
 }
 
 void ObjectList::simplify()
@@ -6446,7 +6406,7 @@ void ObjectList::set_extruder_for_selected_items(const int extruder)
                 new_extruder = 1;
             }
             else if ((type & itVolume) && (m_objects_model->GetVolumeType(sel_item) == ModelVolumeType::MODEL_PART)) {
-                new_extruder = m_objects_model->GetExtruderNumber(m_objects_model->GetParent(sel_item));
+                new_extruder = filament_index_to_one_based(m_objects_model->GetExtruderNumber(m_objects_model->GetParent(sel_item)));
             }
         }
 
@@ -6479,7 +6439,7 @@ void ObjectList::set_extruder_for_selected_items(const int extruder)
             }
         }
 
-        const wxString extruder_str = wxString::Format("%d", new_extruder);
+        const wxString extruder_str = format_filament_index_for_display(new_extruder);
         m_objects_model->SetExtruder(extruder_str, item);
     }
 

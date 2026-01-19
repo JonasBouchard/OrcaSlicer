@@ -141,7 +141,6 @@ public:
 
     // BBS: all no overlap expolygons in same layer
     ExPolygons  no_overlap_expolygons;
-    bool dont_alternate_fill_direction = false;
 
     static float infill_anchor;
     static float infill_anchor_max;

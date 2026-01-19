@@ -2841,7 +2841,8 @@ int ObjectTablePanel::init_filaments_and_colors()
         }
 
         //parse the filaments
-        m_filaments_name[i] = wxString(std::to_string(i+1) + ": " + filament_presets[i]);
+        const int display_index = filament_index_from_zero_based(static_cast<int>(i));
+        m_filaments_name[i] = wxString(std::to_string(display_index) + ": " + filament_presets[i]);
 
         i++;
     }
@@ -3277,7 +3278,7 @@ void ObjectTablePanel::msw_rescale() {
 // ObjectTableDialog
 // ----------------------------------------------------------------------------
 ObjectTableDialog::ObjectTableDialog(wxWindow* parent, Plater* platerObj, Model *modelObj, wxSize maxSize)
-    : GUI::DPIDialog(parent, wxID_ANY, _L("Object/Part Settings"), wxDefaultPosition, wxDefaultSize, wxCAPTION | wxCLOSE_BOX | wxRESIZE_BORDER)
+    : GUI::DPIDialog(parent, wxID_ANY, _L("Object/Part Setting"), wxDefaultPosition, wxDefaultSize, wxCAPTION | wxCLOSE_BOX | wxRESIZE_BORDER)
     ,
     m_model(modelObj), m_plater(platerObj)
 {
@@ -3410,9 +3411,7 @@ void ObjectTableDialog::OnClose(wxCloseEvent &evt)
 
 void ObjectTableDialog::OnText(wxKeyEvent &evt)
 {
-	if (evt.GetKeyCode() == WXK_ESCAPE) {
-		Close();
-	} else {
+	if (evt.GetKeyCode() != WXK_ESCAPE) {
 		evt.Skip();
 	}
 }

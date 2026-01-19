@@ -19,7 +19,7 @@ public:
     wxSize DoGetBestSize() const override;
 
 protected:
-#ifdef __WXMSW__
+#ifdef __WIN32__
     WXLRESULT MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam) override;
 #endif
 
@@ -75,7 +75,7 @@ public:
     void ShowCalibrationButton(bool show = true);
 
 protected:
-#ifdef __WXMSW__
+#ifdef __WIN32__
     WXLRESULT MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam) override;
 #endif
 

@@ -402,7 +402,8 @@ ObjColorPanel::~ObjColorPanel() {
 void ObjColorPanel::msw_rescale()
 {
     for (unsigned int i = 0; i < m_extruder_icon_list.size(); ++i) {
-        auto bitmap = *get_extruder_color_icon(m_colours[i].GetAsString(wxC2S_HTML_SYNTAX).ToStdString(), std::to_string(i + 1), FromDIP(16), FromDIP(16));
+        const int display_index = filament_index_from_zero_based(static_cast<int>(i));
+        auto bitmap = *get_extruder_color_icon(m_colours[i].GetAsString(wxC2S_HTML_SYNTAX).ToStdString(), std::to_string(display_index), FromDIP(16), FromDIP(16));
         m_extruder_icon_list[i]->SetBitmap(bitmap);
     }
    /* for (unsigned int i = 0; i < m_color_cluster_icon_list.size(); ++i) {
@@ -523,7 +524,8 @@ wxBoxSizer *ObjColorPanel::create_extruder_icon_and_rgba_sizer(wxWindow *parent,
 {
     auto icon_sizer = new wxBoxSizer(wxHORIZONTAL);
     wxButton *icon       = new wxButton(parent, wxID_ANY, {}, wxDefaultPosition, ICON_SIZE, wxBORDER_NONE | wxBU_AUTODRAW);
-    icon->SetBitmap(*get_extruder_color_icon(color.GetAsString(wxC2S_HTML_SYNTAX).ToStdString(), std::to_string(id + 1), FromDIP(16), FromDIP(16)));
+    const int display_index = filament_index_from_zero_based(id);
+    icon->SetBitmap(*get_extruder_color_icon(color.GetAsString(wxC2S_HTML_SYNTAX).ToStdString(), std::to_string(display_index), FromDIP(16), FromDIP(16)));
     icon->SetCanFocus(false);
     m_extruder_icon_list.emplace_back(icon);
     icon_sizer->Add(icon, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 0); // wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM

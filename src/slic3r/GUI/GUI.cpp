@@ -1,6 +1,5 @@
 #include "GUI.hpp"
 #include "GUI_App.hpp"
-#include "ICloudServiceAgent.hpp"
 #include "format.hpp"
 #include "I18N.hpp"
 
@@ -79,12 +78,6 @@ void break_to_debugger()
     #endif /* _WIN32 */
 }
 
-const std::string& shortkey_shift_prefix()
-{
-	static const std::string str = _u8L("Shift+");
-    return str;
-}
-
 const std::string& shortkey_ctrl_prefix()
 {
 	static const std::string str =
@@ -107,6 +100,43 @@ const std::string& shortkey_alt_prefix()
 #endif
 		;
 	return str;
+}
+
+bool zero_based_filament_indexing()
+{
+    const auto* preset_bundle = wxGetApp().preset_bundle;
+    if (!preset_bundle)
+        return false;
+
+    const auto& config = preset_bundle->printers.get_edited_preset().config;
+    const auto* opt = config.option<ConfigOptionBool>("zero_based_filament_indexing");
+    return opt != nullptr && opt->value;
+}
+
+wxString format_filament_index_for_display(int index)
+{
+    if (index <= 0)
+        return wxString::Format("%d", index);
+
+    return wxString::Format("%d", filament_index_from_one_based(index));
+}
+
+int filament_index_from_zero_based(int index)
+{
+    return index + (zero_based_filament_indexing() ? 0 : 1);
+}
+
+int filament_index_from_one_based(int index)
+{
+    return zero_based_filament_indexing() ? index - 1 : index;
+}
+
+int filament_index_to_one_based(int index)
+{
+    if (index <= 0)
+        return index;
+
+    return index + (zero_based_filament_indexing() ? 1 : 0);
 }
 
 // opt_index = 0, by the reason of zero-index in ConfigOptionVector by default (in case only one element)
@@ -523,6 +553,15 @@ void about()
 {
     AboutDialog dlg;
     dlg.ShowModal();
+}
+
+void login()
+{
+	//LoginDialog dlg;
+	//dlg.ShowModal();
+
+	ZUserLogin dlg;
+    dlg.run();
 }
 
 void desktop_open_datadir_folder()

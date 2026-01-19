@@ -100,7 +100,6 @@ set(lisbslic3r_sources
     CommonDefs.hpp
     Config.cpp
     Config.hpp
-    ContourZ.cpp
     CustomGCode.cpp
     CustomGCode.hpp
     CutUtils.cpp

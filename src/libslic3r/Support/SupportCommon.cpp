@@ -1163,7 +1163,7 @@ static void modulate_extrusion_by_overlapping_layers(
         for (ExtrusionEntity *ee : extrusions_in_out) {
             ExtrusionPath *path = dynamic_cast<ExtrusionPath*>(ee);
             assert(path != nullptr);
-            polylines.emplace_back(path->polyline.to_polyline());
+            polylines.emplace_back(Polyline(std::move(path->polyline)));
             path_ends.emplace_back(std::pair<Point, Point>(polylines.back().points.front(), polylines.back().points.back()));
             delete path;
         }
@@ -1288,10 +1288,9 @@ static void modulate_extrusion_by_overlapping_layers(
             if (! path->polyline.points.empty())
                 path->polyline.points.pop_back();
             // Consume the fragment's polyline, remove it from the input fragments, so it will be ignored the next time.
-            path->polyline.append(Polyline3(std::move(frag_polyline)));
+            path->polyline.append(std::move(frag_polyline));
             frag_polyline.points.clear();
-            const Point3 &pt_back3 = path->polyline.points.back();
-            pt_current = Point(pt_back3.x(), pt_back3.y());
+            pt_current = path->polyline.points.back();
             if (pt_current == pt_end) {
                 // End of the path.
                 break;

@@ -363,7 +363,7 @@ namespace Slic3r
         return obj;
     }
 
-    int DeviceManager::query_bind_status(std::string& msg, const std::string& provider)
+    int DeviceManager::query_bind_status(std::string& msg)
     {
         if (!m_agent)
         {
@@ -381,7 +381,7 @@ namespace Slic3r
 
         unsigned int http_code;
         std::string http_body;
-        int result = m_agent->query_bind_status(query_list, &http_code, &http_body, provider);
+        int result = m_agent->query_bind_status(query_list, &http_code, &http_body);
 
         if (result < 0)
         {
@@ -419,9 +419,9 @@ namespace Slic3r
         return result;
     }
 
-    MachineObject* DeviceManager::get_user_machine(std::string dev_id, const std::string& provider)
+    MachineObject* DeviceManager::get_user_machine(std::string dev_id)
     {
-        if (!m_agent || !m_agent->is_user_login(provider))
+        if (!m_agent || !m_agent->is_user_login())
         {
             return nullptr;
         }
@@ -442,13 +442,14 @@ namespace Slic3r
         return nullptr;
     }
 
-    void DeviceManager::clean_user_info(bool keep_local_selection)
+    void DeviceManager::clean_user_info()
     {
         BOOST_LOG_TRIVIAL(trace) << "DeviceManager::clean_user_info";
-        const std::string previous_selected_machine = selected_machine;
-        const bool keep_selected_machine = keep_local_selection &&
-            !selected_machine.empty() &&
-            localMachineList.find(selected_machine) != localMachineList.end();
+        // reset selected_machine
+        selected_machine = "";
+        local_selected_machine = "";
+
+        OnSelectedMachineChanged(selected_machine, "");
 
         // clean user list
         for (auto it = userMachineList.begin(); it != userMachineList.end(); it++)
@@ -461,13 +462,6 @@ namespace Slic3r
             }
         }
         userMachineList.clear();
-
-        if (!keep_selected_machine) {
-            selected_machine = "";
-            local_selected_machine = "";
-        }
-
-        OnSelectedMachineChanged(previous_selected_machine, selected_machine);
     }
 
     bool DeviceManager::set_selected_machine(std::string dev_id)
@@ -572,7 +566,7 @@ namespace Slic3r
     {
         if (selected_machine.empty()) return nullptr;
 
-        MachineObject* obj = get_user_machine(selected_machine, GUI::wxGetApp().get_printer_cloud_provider());
+        MachineObject* obj = get_user_machine(selected_machine);
         if (obj)
             return obj;
 
@@ -689,15 +683,15 @@ namespace Slic3r
         return "";
     }
 
-    void DeviceManager::modify_device_name(std::string dev_id, std::string dev_name, const std::string& provider)
+    void DeviceManager::modify_device_name(std::string dev_id, std::string dev_name)
     {
         BOOST_LOG_TRIVIAL(trace) << "modify_device_name";
         if (m_agent)
         {
-            int result = m_agent->modify_printer_name(dev_id, dev_name, provider);
+            int result = m_agent->modify_printer_name(dev_id, dev_name);
             if (result == 0)
             {
-                update_user_machine_list_info(provider);
+                update_user_machine_list_info();
             }
         }
     }
@@ -718,7 +712,6 @@ namespace Slic3r
         try
         {
             json j = json::parse(body);
-            const std::string provider = GUI::wxGetApp().get_printer_cloud_provider();
 
 #if !BBL_RELEASE_TO_PUBLIC
             BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << ": " << j;
@@ -747,7 +740,7 @@ namespace Slic3r
                         obj = new MachineObject(this, m_agent, "", "", "");
                         if (m_agent)
                         {
-                            obj->set_bind_status(m_agent->get_user_name(provider));
+                            obj->set_bind_status(m_agent->get_user_name());
                         }
 
                         if (obj->get_dev_ip().empty())
@@ -813,14 +806,14 @@ namespace Slic3r
         }
     }
 
-    void DeviceManager::update_user_machine_list_info(const std::string& provider)
+    void DeviceManager::update_user_machine_list_info()
     {
         if (!m_agent) return;
 
         BOOST_LOG_TRIVIAL(debug) << "update_user_machine_list_info";
         unsigned int http_code;
         std::string body;
-        int result = m_agent->get_user_print_info(&http_code, &body, provider);
+        int result = m_agent->get_user_print_info(&http_code, &body);
         if (result == 0)
         {
             parse_user_print_info(body);
@@ -913,13 +906,12 @@ namespace Slic3r
         }
 
         // do some refresh
-        const auto cloud_provider = Slic3r::GUI::wxGetApp().get_printer_cloud_provider();
-        if (Slic3r::GUI::wxGetApp().is_user_login(cloud_provider))
+        if (Slic3r::GUI::wxGetApp().is_user_login())
         {
             m_manager->check_pushing();
             try
             {
-                agent->refresh_connection(cloud_provider);
+                agent->refresh_connection();
             }
             catch (...)
             {

@@ -341,7 +341,7 @@ bool ObjectDataViewModelNode::SetValue(const wxVariant& variant, unsigned col)
         DataViewBitmapText data;
         data << variant;
         m_extruder_bmp = data.GetBitmap();
-        m_extruder = data.GetText() == "0" ? _(L("default")) : data.GetText();
+        m_extruder = data.GetText() == _L("default") ? wxString("default") : data.GetText();
         return true; }
     // BBS
     case colSupportPaint:
@@ -611,7 +611,7 @@ wxDataViewItem ObjectDataViewModel::AddObject(ModelObject *model_object, std::st
 
     // create object node
     //const wxString extruder_str = extruder == 0 ? _(L("default")) : wxString::Format("%d", extruder);
-    const wxString extruder_str = wxString::Format("%d", extruder);
+    const wxString extruder_str = format_filament_index_for_display(extruder);
     auto obj_node = new ObjectDataViewModelNode(name, extruder_str, plate_idx, model_object);
     // Add warning icon if detected auto-repaire
     UpdateBitmapForNode(obj_node, warning_bitmap, has_lock);
@@ -678,7 +678,7 @@ wxDataViewItem ObjectDataViewModel::AddVolumeChild( const wxDataViewItem &parent
             extruder_str = root->m_extruder;
     }
     else {
-        extruder_str = wxString::Format("%d", extruder);
+        extruder_str = format_filament_index_for_display(extruder);
     }
 
     const auto node = new ObjectDataViewModelNode(root, name, volume_type, is_text_volume, is_svg_volume, extruder_str, root->m_volumes_cnt);
@@ -905,7 +905,7 @@ wxDataViewItem ObjectDataViewModel::AddLayersChild(const wxDataViewItem &parent_
     if (!parent_node) return wxDataViewItem(0);
 
     // BBS
-    wxString extruder_str = extruder == 0 ? _(L("default")) : wxString::Format("%d", extruder);
+    wxString extruder_str = extruder == 0 ? _(L("default")) : format_filament_index_for_display(extruder);
 
     // get LayerRoot node
     ObjectDataViewModelNode *layer_root_node;
@@ -1748,7 +1748,13 @@ int ObjectDataViewModel::GetExtruderNumber(const wxDataViewItem& item) const
 	if (!node)      // happens if item.IsOk()==false
 		return 0;
 
-	return atoi(node->m_extruder.c_str());
+    const std::string extruder = node->m_extruder.ToStdString();
+    char* end = nullptr;
+    const long value = std::strtol(extruder.c_str(), &end, 10);
+    if (end == extruder.c_str() || *end != '\0')
+        return 0;
+
+    return static_cast<int>(value);
 }
 
 wxString ObjectDataViewModel::GetColumnType(unsigned int col) const

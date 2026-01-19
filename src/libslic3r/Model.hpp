@@ -719,7 +719,6 @@ enum class ConversionType : int {
 };
 
 enum class En3mfType : int {
-    From_Orca,
     From_BBS,
     From_Prusa,
     From_Other
