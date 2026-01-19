@@ -338,7 +338,7 @@ static Option create_option(const std::string &opt_key, const wxString &label, P
     wxString category = gc.category;
     if (type == Preset::TYPE_PRINTER && category.Contains("Extruder ")) {
         std::string opt_idx = opt_key.substr(opt_key.find("#") + 1);
-        category            = wxString::Format("%s %d", "Extruder", atoi(opt_idx.c_str()) + 1);
+        category            = wxString::Format("%s %d", "Extruder", GUI::filament_index_from_zero_based(std::atoi(opt_idx.c_str())));
     }
 
     return Option{boost::nowide::widen(get_key(opt_key, type)),

@@ -834,7 +834,7 @@ struct DynamicFilamentList1Based : DynamicFilamentList
     wxString get_value(int index) override
     {
         wxString str;
-        str << index+1;
+        str << filament_index_from_zero_based(index);
         return str;
     }
     int index_of(wxString value) override
@@ -842,8 +842,9 @@ struct DynamicFilamentList1Based : DynamicFilamentList
         long n = 0;
         if(!value.ToLong(&n))
             return -1;
-        --n;
-        return (n >= 0 && n <= items.size()) ? int(n) : -1;
+        if (!zero_based_filament_indexing())
+            --n;
+        return (n >= 0 && n < static_cast<long>(items.size())) ? int(n) : -1;
     }
     void update(bool force = false)
     {
@@ -2277,7 +2278,7 @@ void Sidebar::init_filament_combo(PlaterPresetComboBox **combo, const int filame
     if ((filament_idx % 2) == 0) // Dont add right column item. this one create equal spacing on left, right & middle
         combo_and_btn_sizer->AddSpacer(FromDIP((filament_idx % 2) == 0 ? 12 : 3)); // Content Margin
 
-    (*combo)->clr_picker->SetLabel(wxString::Format("%d", filament_idx + 1));
+    (*combo)->clr_picker->SetLabel(wxString::Format("%d", filament_index_from_zero_based(filament_idx)));
     combo_and_btn_sizer->Add((*combo)->clr_picker, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()) - FromDIP(2)); // ElementSpacing - 2 (from combo box))
     combo_and_btn_sizer->Add(*combo, 1, wxALL | wxEXPAND, FromDIP(2))->SetMinSize({-1, FromDIP(30)});
 

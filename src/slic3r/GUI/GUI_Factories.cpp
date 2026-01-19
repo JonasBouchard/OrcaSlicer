@@ -923,9 +923,10 @@ void MenuFactory::append_menu_item_change_extruder(wxMenu* menu)
         wxString item_name = _L("Default");
 
         if (i > 0) {
+            const int display_index = filament_index_from_one_based(i);
             auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i - 1]);
             if (preset == nullptr) {
-                item_name = wxString::Format(_L("Filament %d"), i);
+                item_name = wxString::Format(_L("Filament %d"), display_index);
             } else {
                 item_name = from_u8(preset->label(false));
             }
@@ -1526,8 +1527,9 @@ void MenuFactory::create_filament_action_menu(bool init, int active_filament_men
         if (i == active_filament_menu_id)
             continue;
 
+        const int display_index = filament_index_from_zero_based(i);
         auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i]);
-        wxString item_name = preset ? from_u8(preset->label(false)) : wxString::Format(_L("Filament %d"), i + 1);
+        wxString item_name = preset ? wxString::Format("%d: %s", display_index, from_u8(preset->label(false))) : wxString::Format(_L("Filament %d"), display_index);
 
         append_menu_item(sub_menu, wxID_ANY, item_name, "",
             [i](wxCommandEvent&) { plater()->sidebar().change_filament(-2, i); }, *icons[i], menu,
@@ -2083,9 +2085,10 @@ void MenuFactory::append_menu_item_change_filament(wxMenu* menu)
         wxString item_name = _L("Default");
 
         if (i > 0) {
+            const int display_index = filament_index_from_one_based(i);
             auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i - 1]);
             if (preset == nullptr) {
-                item_name = wxString::Format(_L("Filament %d"), i);
+                item_name = wxString::Format(_L("Filament %d"), display_index);
             } else {
                 item_name = from_u8(preset->label(false));
             }

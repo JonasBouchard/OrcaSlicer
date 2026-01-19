@@ -77,6 +77,14 @@ static int filaments_count()
     return wxGetApp().filaments_cnt();
 }
 
+static wxString format_filament_index_for_display(int extruder_id)
+{
+    if (extruder_id <= 0)
+        return wxString::Format("%d", extruder_id);
+
+    return wxString::Format("%d", extruder_id);
+}
+
 static void take_snapshot(const std::string& snapshot_name)
 {
     Plater* plater = wxGetApp().plater();
@@ -688,11 +696,11 @@ void ObjectList::update_filament_values_for_items(const size_t filaments_count)
         auto object = (*m_objects)[i];
         wxString extruder;
         if (!object->config.has("extruder") || size_t(object->config.extruder()) > filaments_count) {
-            extruder = "1";
+            extruder = format_filament_index_for_display(1);
             object->config.set_key_value("extruder", new ConfigOptionInt(1));
         }
         else {
-            extruder = wxString::Format("%d", object->config.extruder());
+            extruder = format_filament_index_for_display(object->config.extruder());
         }
         m_objects_model->SetExtruder(extruder, item);
 
@@ -707,10 +715,10 @@ void ObjectList::update_filament_values_for_items(const size_t filaments_count)
                 if (!item) continue;
                 if (!object->volumes[id]->config.has("extruder") ||
                     size_t(object->volumes[id]->config.extruder()) > filaments_count) {
-                    extruder = wxString::Format("%d", object->config.extruder());
+                    extruder = format_filament_index_for_display(object->config.extruder());
                 }
                 else {
-                    extruder = wxString::Format("%d", object->volumes[id]->config.extruder());
+                    extruder = format_filament_index_for_display(object->volumes[id]->config.extruder());
                 }
 
                 m_objects_model->SetExtruder(extruder, item);
@@ -737,15 +745,15 @@ void ObjectList::update_filament_values_for_items_when_delete_filament(const siz
         auto     object = (*m_objects)[i];
         wxString extruder;
         if (!object->config.has("extruder")) {
-            extruder = std::to_string(1);
+            extruder = format_filament_index_for_display(1);
             object->config.set_key_value("extruder", new ConfigOptionInt(1));
         }
         else if (size_t(object->config.extruder()) == filament_id + 1) {
-            extruder = std::to_string(replace_filament_id);
+            extruder = format_filament_index_for_display(replace_filament_id);
             object->config.set_key_value("extruder", new ConfigOptionInt(replace_filament_id));
         } else {
             int new_extruder = object->config.extruder() > filament_id ? object->config.extruder() - 1 : object->config.extruder();
-            extruder = wxString::Format("%d", new_extruder);
+            extruder = format_filament_index_for_display(new_extruder);
             object->config.set_key_value("extruder", new ConfigOptionInt(new_extruder));
         }
         m_objects_model->SetExtruder(extruder, item);
@@ -787,7 +795,7 @@ void ObjectList::update_filament_values_for_items_when_delete_filament(const siz
                     object->volumes[id]->config.set_key_value("extruder", new ConfigOptionInt(replace_filament_id));
                 } else {
                     int new_extruder = object->volumes[id]->config.extruder() > filament_id ? object->volumes[id]->config.extruder() - 1 : object->volumes[id]->config.extruder();
-                    extruder = wxString::Format("%d", new_extruder);
+                    extruder = format_filament_index_for_display(new_extruder);
                     object->volumes[id]->config.set_key_value("extruder", new ConfigOptionInt(new_extruder));
                 }
 
@@ -815,12 +823,12 @@ void ObjectList::update_filament_values_for_items_when_delete_filament(const siz
                     auto& layer_range_item = *(l_iter);
                     if (layer_range_item.second.has("extruder") && layer_range_item.second.option("extruder")->getInt() == filament_id + 1) {
                         int new_extruder = replace_id == -1 ? 0 : (replace_id + 1);
-                        extruder         = wxString::Format("%d", new_extruder);
+                        extruder         = format_filament_index_for_display(new_extruder);
                         layer_range_item.second.set("extruder", new_extruder);
                     } else {
                         int layer_filament_id = layer_range_item.second.option("extruder")->getInt();
                         int new_extruder      = layer_filament_id > filament_id ? layer_filament_id - 1 : layer_filament_id;
-                        extruder              = wxString::Format("%d", new_extruder);
+                        extruder              = format_filament_index_for_display(new_extruder);
                         layer_range_item.second.set("extruder", new_extruder);
                     }
                     m_objects_model->SetExtruder(extruder, layer_item);
@@ -1608,7 +1616,7 @@ void ObjectList::extruder_editing()
     pos.x = GetColumn(colName)->GetWidth() + GetColumn(colPrint)->GetWidth() + GetColumn(colHeight)->GetWidth() + 5;
     pos.y -= GetTextExtent("m").y;
 
-    apply_extruder_selector(&m_extruder_editor, this, "1", pos, size);
+    apply_extruder_selector(&m_extruder_editor, this, format_filament_index_for_display(1).ToStdString(), pos, size);
 
     m_extruder_editor->SetSelection(m_objects_model->GetExtruderNumber(item));
     m_extruder_editor->Show();
@@ -2772,7 +2780,7 @@ bool ObjectList::del_subobject_from_object(const int obj_idx, const int idx, con
                         int extruder_id = last_volume->config.opt_int("extruder");
                         object->config.set("extruder", extruder_id);
                     }
-                    wxString extruder = object->config.has("extruder") ? wxString::Format("%d", object->config.extruder()) : _devL("1");
+                    wxString extruder = object->config.has("extruder") ? format_filament_index_for_display(object->config.extruder()) : format_filament_index_for_display(1);
                     m_objects_model->SetExtruder(extruder, obj_item);
                 }
                 // add settings to the object, if it has them
@@ -4168,7 +4176,7 @@ void ObjectList::delete_from_model_and_list(const std::vector<ItemForDelete>& it
                 if (obj->volumes.size() == 1) {
                     wxDataViewItem parent = m_objects_model->GetItemById(item->obj_idx);
                     if (obj->config.has("extruder")) {
-                        const wxString extruder = wxString::Format("%d", obj->config.extruder());
+                        const wxString extruder = format_filament_index_for_display(obj->config.extruder());
                         m_objects_model->SetExtruder(extruder, parent);
                     }
                     // If last volume item with warning was deleted, unmark object item
@@ -6184,7 +6192,7 @@ void ObjectList::set_extruder_for_selected_items(const int extruder)
             }
         }
 
-        const wxString extruder_str = wxString::Format("%d", new_extruder);
+        const wxString extruder_str = format_filament_index_for_display(new_extruder);
         m_objects_model->SetExtruder(extruder_str, item);
     }
 

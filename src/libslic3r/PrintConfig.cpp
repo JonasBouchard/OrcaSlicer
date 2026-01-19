@@ -4447,6 +4447,12 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(-2.));
 
+    def = this->add("zero_based_filament_indexing", coBool);
+    def->label = L("0-based filament indexing");
+    def->tooltip = L("When enabled, 0-based filament indexing is used in OrcaSlicer's interface (0..N-1 instead of 1..N).");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("start_end_points", coPoints);
     def->label = L("Start end points");
     def->tooltip  = L("The start and end points which is from cutter area to garbage can.");

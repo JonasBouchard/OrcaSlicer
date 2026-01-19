@@ -1537,6 +1537,17 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
     }
 
+    if (opt_key == "zero_based_filament_indexing") {
+        wxGetApp().sidebar().update_dynamic_filament_list();
+        wxGetApp().sidebar().update_all_preset_comboboxes();
+        wxGetApp().obj_list()->update_objects_list_filament_column(wxGetApp().filaments_cnt());
+        wxGetApp().plater()->update();
+        if (m_type == Preset::TYPE_PRINTER) {
+            if (auto* printer_tab = dynamic_cast<TabPrinter*>(this))
+                printer_tab->refresh_extruder_page_titles(boost::any_cast<bool>(value));
+        }
+    }
+
     if(opt_key == "purge_in_prime_tower")
         wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
 
@@ -4916,12 +4927,13 @@ if (is_marlin_flavor)
         optgroup->append_single_option_line("machine_load_filament_time", "printer_multimaterial_advanced#filament-load-time");
         optgroup->append_single_option_line("machine_unload_filament_time", "printer_multimaterial_advanced#filament-unload-time");
         optgroup->append_single_option_line("machine_tool_change_time", "printer_multimaterial_advanced#tool-change-time");
+        optgroup->append_single_option_line("zero_based_filament_indexing", "printer_multimaterial_advanced#zero-based-filament-indexing");
         m_pages.insert(m_pages.end() - n_after_single_extruder_MM, page);
     }
 
     // Orca: build missed extruder pages
     for (auto extruder_idx = m_extruders_count_old; extruder_idx < m_extruders_count; ++extruder_idx) {
-        const wxString& page_name = (m_extruders_count > 1) ? wxString::Format("Extruder %d", int(extruder_idx + 1)) : wxString::Format("Extruder");
+        const wxString& page_name = (m_extruders_count > 1) ? wxString::Format("Extruder %d", filament_index_from_zero_based(static_cast<int>(extruder_idx))) : wxString::Format("Extruder");
 
         //# build page
         //const wxString& page_name = wxString::Format("Extruder %d", int(extruder_idx + 1));
@@ -5044,15 +5056,15 @@ if (is_marlin_flavor)
     }
     // BBS. No extra extruder page for single physical extruder machine
     // # remove extra pages
-    auto &first_extruder_title = const_cast<wxString &>(m_pages[n_before_extruders]->title());
     if (m_extruders_count < m_extruders_count_old) {
-        m_pages.erase(	m_pages.begin() + n_before_extruders + m_extruders_count,
-                        m_pages.begin() + n_before_extruders + m_extruders_count_old);
-        if (m_extruders_count == 1)
-            first_extruder_title = wxString::Format("Extruder");
-    } else if (m_extruders_count_old == 1) {
-        first_extruder_title = wxString::Format("Extruder %d", 1);
+        m_pages.erase(m_pages.begin() + n_before_extruders + m_extruders_count,
+                      m_pages.begin() + n_before_extruders + m_extruders_count_old);
     }
+    for (size_t extruder_idx = 0; extruder_idx < m_extruders_count; ++extruder_idx) {
+        wxString page_title = (m_extruders_count > 1) ? wxString::Format("Extruder %d", filament_index_from_zero_based(static_cast<int>(extruder_idx))) : wxString("Extruder");
+        m_pages[n_before_extruders + extruder_idx]->set_title(page_title);
+    }
+    const wxString& first_extruder_title = m_pages[n_before_extruders]->title();
     auto & searcher = wxGetApp().sidebar().get_searcher();
     for (auto &group : m_pages[n_before_extruders]->m_optgroups) {
         group->set_config_category_and_type(first_extruder_title, m_type);
@@ -5073,6 +5085,43 @@ if (is_marlin_flavor)
     reload_config();
 
     // apply searcher with current configuration
+    apply_searcher();
+}
+
+void TabPrinter::refresh_extruder_page_titles(bool start_at_zero)
+{
+    if (m_pages.empty() || m_extruders_count == 0)
+        return;
+
+    size_t first_extruder_page = m_pages.size();
+    for (size_t i = 0; i < m_pages.size(); ++i) {
+        const wxString& title = m_pages[i]->title();
+        if (title == "Extruder" || title.StartsWith("Extruder ")) {
+            first_extruder_page = i;
+            break;
+        }
+    }
+    if (first_extruder_page >= m_pages.size())
+        return;
+
+    for (size_t extruder_idx = 0; extruder_idx < m_extruders_count; ++extruder_idx) {
+        const size_t page_index = first_extruder_page + extruder_idx;
+        if (page_index >= m_pages.size())
+            break;
+
+        wxString page_title = (m_extruders_count > 1) ? wxString::Format("Extruder %d", static_cast<int>(extruder_idx) + (start_at_zero ? 0 : 1)) : wxString("Extruder");
+        m_pages[page_index]->set_title(page_title);
+    }
+
+    const wxString& first_extruder_title = m_pages[first_extruder_page]->title();
+    auto& searcher = wxGetApp().sidebar().get_searcher();
+    for (auto& group : m_pages[first_extruder_page]->m_optgroups) {
+        group->set_config_category_and_type(first_extruder_title, m_type);
+        for (auto& opt : group->opt_map())
+            searcher.add_key(opt.first + "#0", m_type, group->title, first_extruder_title);
+    }
+
+    rebuild_page_tree();
     apply_searcher();
 }
 
@@ -7073,6 +7122,16 @@ void Page::reload_config()
 {
     for (auto group : m_optgroups)
         group->reload_config();
+}
+
+void Page::set_title(const wxString& title)
+{
+    if (m_title == title)
+        return;
+
+    m_title = title;
+    if (m_page_title)
+        m_page_title->SetLabel(_(m_title));
 }
 
 void Page::update_visibility(ConfigOptionMode mode, bool update_contolls_visibility)

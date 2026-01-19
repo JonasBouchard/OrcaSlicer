@@ -345,11 +345,11 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                 break;
             }
             case libvgcode::EViewType::Tool: {
-                sprintf(buf, "%s %s%d", buf, _u8L("Tool: ").c_str(), vertex.extruder_id + 1);
+                sprintf(buf, "%s %s%d", buf, _u8L("Tool: ").c_str(), filament_index_from_zero_based(static_cast<int>(vertex.extruder_id)));
                 break;
             }
             case libvgcode::EViewType::ColorPrint: {
-                sprintf(buf, "%s %s%d", buf, _u8L("Color: ").c_str(), vertex.color_id + 1);
+                sprintf(buf, "%s %s%d", buf, _u8L("Color: ").c_str(), filament_index_from_zero_based(static_cast<int>(vertex.color_id)));
                 break;
             }
             case libvgcode::EViewType::ActualVolumetricFlowRate: {
@@ -2480,7 +2480,7 @@ void GCodeViewer::render_all_plates_stats(const std::vector<const GCodeProcessor
         for (auto it = model_volume_of_extruders_all_plates.begin(); it != model_volume_of_extruders_all_plates.end(); it++) {
             if (i < model_used_filaments_m_all_plates.size() && i < model_used_filaments_g_all_plates.size()) {
                 std::vector<std::pair<std::string, float>> columns_offsets;
-                columns_offsets.push_back({ std::to_string(it->first + 1), offsets[_u8L("Filament")]});
+                columns_offsets.push_back({ std::to_string(filament_index_from_zero_based(static_cast<int>(it->first))), offsets[_u8L("Filament")]});
 
                 char buf[64];
                 double unit_conver = imperial_units ? GizmoObjectManipulation::oz_to_g : 1.0;
@@ -3562,7 +3562,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
         for (uint8_t extruder_id : used_extruders_ids) {
             ::sprintf(buf, imperial_units ? "%.2f in    %.2f g" : "%.2f m    %.2f g", model_used_filaments_m[i], model_used_filaments_g[i]);
-            append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), { { _u8L("Extruder") + " " + std::to_string(extruder_id + 1), offsets[0]}, {buf, offsets[1]} });
+            append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), { { _u8L("Extruder") + " " + std::to_string(filament_index_from_zero_based(extruder_id)), offsets[0]}, {buf, offsets[1]} });
             // append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), _u8L("Extruder") + " " + std::to_string(extruder_id + 1),
             // true, "", 0.0f, 0.0f, offsets, used_filaments_m[extruder_id], used_filaments_g[extruder_id]);
             i++;
@@ -3614,7 +3614,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         for (auto extruder_idx : used_extruders_ids) {
             if (i < model_used_filaments_m.size() && i < model_used_filaments_g.size()) {
                 std::vector<std::pair<std::string, float>> columns_offsets;
-                columns_offsets.push_back({ std::to_string(extruder_idx + 1), color_print_offsets[_u8L("Filament")]});
+                columns_offsets.push_back({ std::to_string(filament_index_from_zero_based(extruder_idx)), color_print_offsets[_u8L("Filament")]});
 
                 char buf[64];
                 float column_sum_m = 0.0f;
@@ -3990,7 +3990,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
                 ret = std::max(ret, ImGui::CalcTextSize((_u8L("Print settings") + std::string(":")).c_str()).x);
             if (!m_settings_ids.filament.empty()) {
                 for (unsigned char i : m_viewer.get_used_extruders_ids()) {
-                    ret = std::max(ret, ImGui::CalcTextSize((_u8L("Filament") + " " + std::to_string(i + 1) + ":").c_str()).x);
+                    ret = std::max(ret, ImGui::CalcTextSize((_u8L("Filament") + " " + std::to_string(filament_index_from_zero_based(static_cast<int>(i))) + ":").c_str()).x);
                 }
             }
             if (ret > 0.0f)
@@ -4017,7 +4017,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
             for (unsigned char i : m_viewer.get_used_extruders_ids()) {
                 if (i < static_cast<unsigned char>(m_settings_ids.filament.size()) && !m_settings_ids.filament[i].empty()) {
                     std::string txt = _u8L("Filament");
-                    txt += (m_viewer.get_used_extruders_count() == 1) ? ":" : " " + std::to_string(i + 1);
+                    txt += (m_viewer.get_used_extruders_count() == 1) ? ":" : " " + std::to_string(filament_index_from_zero_based(static_cast<int>(i)));
                     imgui.text(txt);
                     ImGui::SameLine(offset);
                     imgui.text(m_settings_ids.filament[i]);

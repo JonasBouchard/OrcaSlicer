@@ -86,6 +86,7 @@ public:
 	wxBoxSizer*	vsizer() const { return m_vsizer; }
 	wxWindow*	parent() const { return m_parent; }
 	const wxString&	title()	 const { return m_title; }
+	void		set_title(const wxString& title);
 	size_t		iconID() const { return m_iconID; }
 	void		set_config(DynamicPrintConfig* config_in) { m_config = config_in; }
 	void		reload_config();
@@ -640,6 +641,7 @@ public:
 	bool 		supports_printer_technology(const PrinterTechnology /* tech */) const override { return true; }
 
 	void		set_extruder_volume_type(int extruder_id, NozzleVolumeType type);
+	void		refresh_extruder_page_titles(bool start_at_zero);
 
 	wxSizer*	create_bed_shape_widget(wxWindow* parent);
 	void		cache_extruder_cnt(const DynamicPrintConfig* config = nullptr);

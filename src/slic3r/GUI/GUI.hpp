@@ -32,6 +32,10 @@ void break_to_debugger();
 extern const std::string& shortkey_ctrl_prefix();
 extern const std::string& shortkey_alt_prefix();
 
+bool zero_based_filament_indexing();
+int filament_index_from_zero_based(int index);
+int filament_index_from_one_based(int index);
+
 extern AppConfig* get_app_config();
 
 extern void add_menus(wxMenuBar *menu, int event_preferences_changed, int event_language_change);
