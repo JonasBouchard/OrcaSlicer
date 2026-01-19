@@ -210,6 +210,11 @@ void KBShortcutsDialog::fill_shortcuts()
         
         bool swap_mouse_buttons = wxGetApp().app_config->get_bool("swap_mouse_buttons");
 
+        const wxString filament_shortcut_range = zero_based_filament_indexing() ? L("0-9") : L("1-9");
+        const wxString filament_shortcut_description = zero_based_filament_indexing()
+            ? L("keyboard 0-9: set filament for object/part")
+            : L("keyboard 1-9: set filament for object/part");
+
         Shortcuts plater_shortcuts = {
             { L("Left mouse button"), swap_mouse_buttons ? L("Pan View") : L("Rotate View") },
             { L("Right mouse button"), swap_mouse_buttons ? L("Rotate View") : L("Pan View") },
@@ -231,7 +236,7 @@ void KBShortcutsDialog::fill_shortcuts()
             {L("Arrow Right"), L("Move selection 10 mm in positive X direction")},
             {shift + L("Any arrow"), L("Movement step set to 1 mm")},
             {L("Esc"), L("Deselect all")},
-            {"1-9", L("keyboard 1-9: set filament for object/part")},
+            {filament_shortcut_range, filament_shortcut_description},
             {ctrl + "0", L("Camera view - Default")},
             {ctrl + "1", L("Camera view - Top")},
             {ctrl + "2", L("Camera view - Bottom")},

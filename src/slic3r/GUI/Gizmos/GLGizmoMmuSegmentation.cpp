@@ -19,6 +19,11 @@
 
 namespace Slic3r::GUI {
 
+static wxString filament_shortcut_caption()
+{
+    return zero_based_filament_indexing() ? _L("Key 0~9") : _L("Key 1~9");
+}
+
 static inline void show_notification_extruders_limit_exceeded()
 {
     wxGetApp()
@@ -105,7 +110,7 @@ bool GLGizmoMmuSegmentation::on_init()
     m_desc["paint"]                = _L("Paint");
     m_desc["erase_caption"]        = shift + _L("Left mouse button");
     m_desc["erase"]                = _L("Erase");
-    m_desc["shortcut_key_caption"] = _L("Key 1~9");
+    m_desc["shortcut_key_caption"] = filament_shortcut_caption();
     m_desc["shortcut_key"]         = _L("Choose filament");
     m_desc["edge_detection"]       = _L("Edge detection");
     m_desc["gap_area_caption"]     = ctrl + _L("Mouse wheel");
@@ -167,6 +172,7 @@ void GLGizmoMmuSegmentation::render_painter_gizmo()
 void GLGizmoMmuSegmentation::data_changed(bool is_serializing)
 {
     GLGizmoPainterBase::data_changed(is_serializing);
+    m_desc["shortcut_key_caption"] = filament_shortcut_caption();
     if (m_state != On || wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() != ptFFF || wxGetApp().extruders_edited_cnt() <= 1)
         return;
 
