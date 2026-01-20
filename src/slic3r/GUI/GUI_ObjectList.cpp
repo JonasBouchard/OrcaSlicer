@@ -1754,13 +1754,18 @@ void ObjectList::key_event(wxKeyEvent& event)
     else if (event.GetUnicodeKey() == 'p')
         toggle_printable_state();
     else if (filaments_count() > 1) {
-        std::vector<wxChar> numbers = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
         wxChar key_char = event.GetUnicodeKey();
-        if (std::find(numbers.begin(), numbers.end(), key_char) != numbers.end()) {
-            long extruder_number;
-            if (wxNumberFormatter::FromString(wxString(key_char), &extruder_number) &&
-                filaments_count() >= extruder_number)
-                set_extruder_for_selected_items(int(extruder_number));
+        if (key_char >= '0' && key_char <= '9') {
+            const int digit = key_char - '0';
+            int extruder_number = digit;
+            if (zero_based_filament_indexing()) {
+                extruder_number = digit + 1;
+            } else if (digit == 0) {
+                extruder_number = 10;
+            }
+
+            if (extruder_number > 0 && filaments_count() >= extruder_number)
+                set_extruder_for_selected_items(extruder_number);
         }
         else
             event.Skip();
