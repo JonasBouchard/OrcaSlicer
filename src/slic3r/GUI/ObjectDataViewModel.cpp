@@ -341,7 +341,7 @@ bool ObjectDataViewModelNode::SetValue(const wxVariant& variant, unsigned col)
         DataViewBitmapText data;
         data << variant;
         m_extruder_bmp = data.GetBitmap();
-        m_extruder = data.GetText() == _L("default") ? wxString("default") : data.GetText();
+        m_extruder = data.GetText();
         return true; }
     // BBS
     case colSupportPaint:

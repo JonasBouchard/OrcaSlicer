@@ -31,12 +31,14 @@ void break_to_debugger();
 // Platform specific Ctrl+/Alt+ (Windows, Linux) vs. ⌘/⌥ (OSX) prefixes 
 extern const std::string& shortkey_ctrl_prefix();
 extern const std::string& shortkey_alt_prefix();
+extern const std::string& shortkey_shift_prefix(); // Shift is the same on all platforms, but we provide a function for consistency with Ctrl/Alt prefixes
 
 bool zero_based_filament_indexing();
 wxString format_filament_index_for_display(int index);
 int filament_index_from_zero_based(int index);
 int filament_index_from_one_based(int index);
 int filament_index_to_one_based(int index);
+int filament_shortcut_to_extruder(int shortcut_number);
 
 extern AppConfig* get_app_config();
 
@@ -84,8 +86,6 @@ boost::filesystem::path	into_path(const wxString &str);
 
 // Display an About dialog
 extern void about();
-// Display a Login dialog
-extern void login();
 // Ask the destop to open the datadir using the default file explorer.
 extern void desktop_open_datadir_folder();
 // Ask the destop to open one folder

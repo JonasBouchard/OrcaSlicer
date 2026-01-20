@@ -998,7 +998,7 @@ bool GLGizmosManager::on_key(wxKeyEvent& evt)
                     keyCode = keyCode- WXK_NUMPAD0+'0';
                 }
                 if (keyCode >= '0' && keyCode <= '9') {
-                    if (keyCode == '1' && !m_timer_set_color.IsRunning()) {
+                    if (keyCode == '1' && !zero_based_filament_indexing() && !m_timer_set_color.IsRunning()) {
                         m_timer_set_color.StartOnce(500);
                         processed = true;
                     }
