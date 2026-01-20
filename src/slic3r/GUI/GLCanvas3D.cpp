@@ -3414,11 +3414,16 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
         case '8':
         case '9': {
             if (m_timer_set_color.IsRunning()) {
-                if (keyCode < '7')  keyCode += 10;
+                if (keyCode < '7')
+                    keyCode += 10;
                 m_timer_set_color.Stop();
             }
-            if (m_gizmos.get_current_type() != GLGizmosManager::MmSegmentation)
-                obj_list->set_extruder_for_selected_items(keyCode - '0');
+            if (m_gizmos.get_current_type() != GLGizmosManager::MmSegmentation) {
+                const int shortcut_number = keyCode - '0';
+                const int extruder_number = filament_shortcut_to_extruder(shortcut_number);
+                if (extruder_number > 0)
+                    obj_list->set_extruder_for_selected_items(extruder_number);
+            }
             break;
         }
 

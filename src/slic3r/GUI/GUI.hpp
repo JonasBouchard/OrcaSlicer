@@ -35,6 +35,7 @@ extern const std::string& shortkey_alt_prefix();
 bool zero_based_filament_indexing();
 int filament_index_from_zero_based(int index);
 int filament_index_from_one_based(int index);
+int filament_shortcut_to_extruder(int shortcut_number);
 
 extern AppConfig* get_app_config();
 
