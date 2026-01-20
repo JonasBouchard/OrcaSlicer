@@ -1757,13 +1757,12 @@ void ObjectList::key_event(wxKeyEvent& event)
         wxChar key_char = event.GetUnicodeKey();
         if (key_char >= '0' && key_char <= '9') {
             const int digit = key_char - '0';
-            int extruder_number = digit;
-            if (zero_based_filament_indexing()) {
-                extruder_number = digit + 1;
-            } else if (digit == 0) {
-                extruder_number = 10;
+            int display_index = digit;
+            if (!zero_based_filament_indexing() && digit == 0) {
+                display_index = 10;
             }
 
+            const int extruder_number = zero_based_filament_indexing() ? (display_index + 1) : display_index;
             if (extruder_number > 0 && filaments_count() >= extruder_number)
                 set_extruder_for_selected_items(extruder_number);
         }
