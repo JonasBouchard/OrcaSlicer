@@ -123,6 +123,17 @@ int filament_index_from_one_based(int index)
     return zero_based_filament_indexing() ? index - 1 : index;
 }
 
+int filament_shortcut_to_extruder(int shortcut_number)
+{
+    if (shortcut_number < 0)
+        return shortcut_number;
+
+    if (zero_based_filament_indexing())
+        return shortcut_number + 1;
+
+    return shortcut_number == 0 ? 10 : shortcut_number;
+}
+
 // opt_index = 0, by the reason of zero-index in ConfigOptionVector by default (in case only one element)
 void change_opt_value(DynamicPrintConfig& config, const t_config_option_key& opt_key, const boost::any& value, int opt_index /*= 0*/)
 {
